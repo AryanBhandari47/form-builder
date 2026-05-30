@@ -4,12 +4,12 @@
 
 ### Server Components by Default
 - `page.tsx` files are **Server Components** — no `"use client"` directive
-- Client logic lives in separate `*Client.tsx` files imported by the page
+- Client logic lives in `src/components/` — imported by the page
 - Pattern: `page.tsx` renders `<SomethingClient />` (thin wrapper, zero logic)
 
 ```tsx
 // app/templates/page.tsx — Server Component
-import TemplatesPageClient from './TemplatesPageClient'
+import TemplatesPageClient from '@/components/templates/TemplatesPageClient'
 export default function TemplatesPage() {
   return <TemplatesPageClient />
 }
@@ -21,8 +21,11 @@ export default function TemplatesPage() {
 - Component is a leaf node in the component tree (no children importing it as server)
 
 ### File Co-location
-- Client components that are page-specific live next to the page: `app/templates/TemplatesPageClient.tsx`
-- Shared client components live in `shared/ui/` or `modules/`
+- `src/app/` contains only `page.tsx`, `layout.tsx`, `error.tsx`, `globals.css`
+- All client components live in `src/components/` with domain-based folders
+- Custom hooks live in `src/hooks/`
+- Pure logic (engines, registry, storage) lives in `src/lib/`
+- Shared components live in `shared/ui/`
 
 ---
 
@@ -115,7 +118,7 @@ import { selectTemplateById } from '@/store/selectors/templateSelectors'
 ### Import Order
 1. React / Next.js
 2. Third-party (Redux, Zod, etc.)
-3. Internal aliases (`@/store`, `@/entities`, `@/modules`, `@/shared`)
+3. Internal aliases (`@/store`, `@/entities`, `@/lib`, `@/components`, `@/shared`, `@/hooks`)
 4. Relative imports (same module)
 
 ---

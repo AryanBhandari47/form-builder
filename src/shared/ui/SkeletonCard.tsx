@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "./Skeleton";
 
@@ -13,7 +12,7 @@ export function SkeletonCard({ className }: SkeletonCardProps) {
     <div
       aria-hidden="true"
       className={cn(
-        "bg-surface border border-border rounded-[var(--radius-lg)]",
+        "bg-surface border border-border rounded-lg",
         "overflow-hidden",
         className
       )}
@@ -39,8 +38,8 @@ export function SkeletonCard({ className }: SkeletonCardProps) {
 
         {/* Buttons row */}
         <div className="flex gap-2">
-          <Skeleton className="h-8 flex-1 rounded-[var(--radius-md)]" />
-          <Skeleton className="h-8 flex-1 rounded-[var(--radius-md)]" />
+          <Skeleton className="h-8 flex-1 rounded-md" />
+          <Skeleton className="h-8 flex-1 rounded-md" />
         </div>
       </div>
     </div>

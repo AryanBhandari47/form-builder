@@ -1,6 +1,7 @@
 "use client";
 
-import * as React from "react";
+import { forwardRef } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "./Spinner";
 
@@ -8,13 +9,12 @@ import { Spinner } from "./Spinner";
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "danger" | "outline";
   size?: "sm" | "md" | "lg" | "icon";
   isLoading?: boolean;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -55,16 +55,16 @@ const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
 
 const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
   sm: "h-8 px-3 text-xs gap-1.5 rounded-sm",
-  md: "h-9 px-4 text-sm gap-2 rounded-[var(--radius-md)]",
-  lg: "h-11 px-6 text-base gap-2.5 rounded-[var(--radius-md)]",
-  icon: "h-9 w-9 rounded-[var(--radius-md)] p-0 flex-shrink-0",
+  md: "h-9 px-4 text-sm gap-2 rounded-md",
+  lg: "h-11 px-6 text-base gap-2.5 rounded-md",
+  icon: "h-9 w-9 rounded-md p-0 shrink-0",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   function Button(
     {
       variant = "primary",
@@ -111,13 +111,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           </>
         ) : (
           <>
-            {leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}
+            {leftIcon && <span className="shrink-0">{leftIcon}</span>}
             {size !== "icon" ? (
               children
             ) : (
-              <span className="flex-shrink-0">{children}</span>
+              <span className="shrink-0">{children}</span>
             )}
-            {rightIcon && <span className="flex-shrink-0">{rightIcon}</span>}
+            {rightIcon && <span className="shrink-0">{rightIcon}</span>}
           </>
         )}
       </button>

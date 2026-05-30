@@ -36,4 +36,26 @@ export type { SkeletonRowProps } from './SkeletonRow'
 export { Tooltip } from './Tooltip'
 export type { TooltipProps } from './Tooltip'
 
-export { ChevronUpIcon, ChevronDownIcon, XIcon } from './Icons'
+export {
+  GripIcon,
+  TrashIcon,
+  FileIcon,
+  EyeIcon,
+  DownloadIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  XIcon,
+  IconX,
+  IconPlus,
+  IconSearch,
+  IconArrowLeft,
+  IconSave,
+  IconShare,
+  IconCheck,
+  IconGrid,
+  IconHeart,
+  IconDocument,
+  IconDraft,
+  IconMenu,
+  IconFormEmpty,
+} from './Icons'

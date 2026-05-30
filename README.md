@@ -33,7 +33,7 @@ interface FieldRegistryEntry<T extends FormField> {
 }
 ```
 
-**Adding an 11th field type requires touching exactly one file**: create `src/modules/field-registry/fields/my-new-type.ts` and add one import to `src/modules/field-registry/index.ts`. No switch statements in existing files. No conditional rendering in shared components. The UI palette, config panel, fill renderers, and PDF exporter all resolve behaviour through the registry.
+**Adding an 11th field type requires touching exactly one file**: create `src/lib/field-registry/fields/my-new-type.ts` and add one import to `src/lib/field-registry/index.ts`. No switch statements in existing files. No conditional rendering in shared components. The UI palette, config panel, fill renderers, and PDF exporter all resolve behaviour through the registry.
 
 The registry is server-importable (no React imports) — safe to use in server components, edge functions, or API routes.
 
@@ -79,7 +79,7 @@ The `fieldIds: string[]` ordered array is separated from the `fields: Record<str
 
 ### 4. Conditional Logic Engine
 
-Located in `src/modules/conditional-engine/evaluator.ts` — pure functions, zero React dependencies.
+Located in `src/lib/evaluator.ts` — pure functions, zero React dependencies.
 
 **AND Logic**: Multiple conditions on a single field use AND semantics — all conditions must be true for the effect to apply.
 
@@ -95,7 +95,7 @@ Rationale: AND is the correct default for "show this field when the user has con
 
 ### 5. Calculation Engine
 
-Located in `src/modules/calculation-engine/calculator.ts` — pure functions.
+Located in `src/lib/calculator.ts` — pure functions.
 
 Supports: Sum, Average, Minimum, Maximum over a selected set of Number fields.
 
@@ -204,7 +204,7 @@ All conditions must be true for the effect (show/hide/mark-required/mark-not-req
 
 The `StorageAdapter` interface is the seam:
 
-1. Create `src/modules/storage/indexedDb.adapter.ts` implementing `StorageAdapter` (using `idb`)
+1. Create `src/lib/storage/indexedDb.adapter.ts` implementing `StorageAdapter` (using `idb`)
 2. Replace the singleton import in consuming files from `localStorage.adapter` → `indexedDb.adapter`
 3. Add a one-time migration in `StorageHydration.tsx`: on first run, copy `fb:*` localStorage entries into IDB, then clear localStorage
 
@@ -234,56 +234,61 @@ src/__tests__/calculationEngine.test.ts    10 tests
 
 ```
 src/
-├── app/                               # Next.js App Router pages (Server Components)
+├── app/                               # Next.js App Router (Server Components only)
 │   ├── templates/
-│   │   ├── page.tsx                   # Templates dashboard → TemplatesPageClient
-│   │   ├── TemplatesPageClient.tsx    # Client: sidebar, grid, search
+│   │   ├── page.tsx                   # Templates dashboard
 │   │   └── [templateId]/
-│   │       ├── page.tsx               # Builder → BuilderPageClient
-│   │       └── BuilderPageClient.tsx  # Client: tabs (Build/Preview/Responses)
+│   │       └── page.tsx               # Builder page
 │   ├── fill/[templateId]/[responseId]/
-│   │   ├── page.tsx                   # Fill form → FillPageClient
-│   │   ├── FillPageClient.tsx         # Client: form fill UI
+│   │   ├── page.tsx                   # Fill form page
 │   │   └── error.tsx                  # Error boundary
 │   ├── print/[responseId]/
-│   │   ├── page.tsx                   # Print/PDF → PrintPageClient
-│   │   └── PrintPageClient.tsx        # Client: print layout
+│   │   └── page.tsx                   # Print/PDF page
 │   ├── layout.tsx                     # Root layout (Server)
 │   └── page.tsx                       # Redirect to /templates
+│
+├── components/                        # Client components (one component per file)
+│   ├── BuilderCanvas.tsx              # Canvas with DnD reorder
+│   ├── FieldPalette.tsx               # Draggable field palette
+│   ├── ConfigPanel.tsx                # Field config editor
+│   ├── ConditionsBuilder.tsx          # Conditional logic builder
+│   ├── ResponsesPanel.tsx             # Response table + cards
+│   ├── FieldIcon.tsx                  # Field type → icon mapper
+│   ├── FieldPreview.tsx               # Field type → preview renderer
+│   ├── TemplateCard.tsx               # Template list card
+│   ├── StatCard.tsx                   # Stats display card
+│   ├── FillForm.tsx                   # Form orchestrator
+│   ├── StorageHydration.tsx           # localStorage → Redux sync
+│   ├── config/                        # Per-type config forms (14 files)
+│   ├── fill-fields/                   # Per-type fill renderers (9 files)
+│   └── templates/                     # Page-specific client components
+│       ├── TemplatesPageClient.tsx
+│       ├── BuilderPageClient.tsx
+│       ├── FillPageClient.tsx
+│       ├── PrintPageClient.tsx
+│       ├── NavLink.tsx, ScratchCard.tsx
+│       ├── TabButton.tsx, EditableTitle.tsx, MobileDrawer.tsx
+│
+├── hooks/                             # Custom React hooks
+│   ├── useDragToReorder.ts            # Pointer Events drag-to-reorder
+│   └── useStorageHydration.ts         # localStorage hydration hook
 │
 ├── entities/                          # Domain types (no React, no Redux)
 │   ├── field.ts                       # FormField discriminated union (9 types)
 │   ├── template.ts                    # FormTemplate
 │   └── response.ts                    # FormResponse, FieldValue, FileMetadata
 │
-├── modules/
-│   ├── form-builder/components/       # Builder UI
-│   │   ├── BuilderCanvas.tsx          # Canvas with DnD reorder
-│   │   ├── FieldPalette.tsx           # Draggable field palette
-│   │   ├── ConfigPanel.tsx            # Field config editor
-│   │   ├── ConditionsBuilder.tsx      # Conditional logic builder
-│   │   ├── ResponsesPanel.tsx         # Response table
-│   │   ├── FieldIcon.tsx              # Field type → icon mapper
-│   │   ├── FieldPreview.tsx           # Field type → preview renderer
-│   │   ├── TemplateCard.tsx           # Template list card
-│   │   ├── StatCard.tsx               # Stats display card
-│   │   └── config/                    # Per-type config forms (9 files)
-│   │       ├── ConfigRow.tsx          # Label + input row
-│   │       ├── ConfigInput.tsx        # Styled input
-│   │       ├── ConfigSection.tsx      # Section wrapper
-│   │       ├── ConfigDivider.tsx      # Horizontal rule
-│   │       └── [FieldType]Config.tsx  # Type-specific config (7 files)
-│   │
-│   ├── form-fill/components/          # Fill UI
-│   │   ├── FillForm.tsx               # Form orchestrator
-│   │   └── fields/                    # Per-type fill renderers (9 files)
-│   │
-│   ├── conditional-engine/            # Pure evaluation: evaluateAll()
-│   ├── calculation-engine/            # Pure computation: computeAllCalculations()
+├── lib/                               # Pure logic, no React dependencies
+│   ├── calculator.ts                  # Calculation engine (sum, avg, min, max)
+│   ├── evaluator.ts                   # Conditional logic engine
 │   ├── field-registry/                # Registry API + self-registration per type
+│   │   ├── index.ts, registry.ts
 │   │   └── fields/                    # Registration files (9 files)
-│   ├── dnd/                           # Custom Pointer Events drag-to-reorder
-│   └── storage/                       # StorageAdapter + LocalStorageAdapter
+│   ├── storage/                       # Storage adapter layer
+│   │   ├── adapter.ts                 # StorageAdapter interface
+│   │   ├── localStorage.adapter.ts    # LocalStorageAdapter implementation
+│   │   └── seedData.ts               # Default template seeding
+│   └── utils.ts                       # cn(), generateId(), formatDate(), etc.
 │
 ├── shared/ui/                         # Design-system components (one per file)
 │   ├── index.ts                       # Barrel exports
@@ -291,15 +296,13 @@ src/
 │   ├── Toggle.tsx, Badge.tsx, Spinner.tsx
 │   ├── EmptyState.tsx, Tooltip.tsx
 │   ├── Skeleton.tsx, SkeletonCard.tsx, SkeletonRow.tsx
-│   └── Icons.tsx                      # Shared icons (ChevronUp, ChevronDown, X)
+│   └── Icons.tsx                      # Shared icons (20+ icon components)
 │
 ├── store/                             # Redux Toolkit
 │   ├── slices/                        # templates, responses, builderUi, fill
 │   ├── selectors/                     # Memoized Reselect selectors
 │   ├── StoreProvider.tsx              # 'use client' Redux Provider
 │   └── index.ts                       # makeStore(), RootState, AppDispatch
-│
-├── lib/utils.ts                       # cn(), generateId(), formatDate(), etc.
 │
 └── __tests__/                         # Engine unit tests
     ├── conditionalEngine.test.ts

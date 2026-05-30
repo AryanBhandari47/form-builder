@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useState } from 'react'
 import { Provider } from 'react-redux'
 import { makeStore, type AppStore } from './index'
 
@@ -11,15 +11,11 @@ interface StoreProviderProps {
 /**
  * Client component that wraps the app with the Redux Provider.
  *
- * Uses a ref-stabilized store instance so that the store is created only once
- * per React tree, even in strict mode double-renders.
+ * Creates the store once via useState lazy initializer.
+ * Stable across renders and compatible with React 19 strict lint rules.
  */
 export function StoreProvider({ children }: StoreProviderProps) {
-  const storeRef = useRef<AppStore | null>(null)
+  const [store] = useState<AppStore>(makeStore)
 
-  if (storeRef.current === null) {
-    storeRef.current = makeStore()
-  }
-
-  return <Provider store={storeRef.current}>{children}</Provider>
+  return <Provider store={store}>{children}</Provider>
 }

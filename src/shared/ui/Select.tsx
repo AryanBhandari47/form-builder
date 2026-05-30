@@ -1,6 +1,7 @@
 'use client'
 
-import * as React from 'react'
+import { forwardRef, useId } from 'react'
+import type { SelectHTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -14,7 +15,7 @@ export interface SelectOption {
 }
 
 export interface SelectProps
-  extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'children'> {
+  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children'> {
   label?: string
   error?: string
   hint?: string
@@ -26,12 +27,13 @@ export interface SelectProps
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
+export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   function Select(
     { label, error, hint, options, placeholder, className, id, ...rest },
     ref
   ) {
-    const selectId = id ?? React.useId()
+    const generatedId = useId()
+    const selectId = id ?? generatedId
     const hasError = Boolean(error)
 
     return (
@@ -58,9 +60,9 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 : undefined
             }
             className={cn(
-              'w-full appearance-none bg-surface border rounded-[var(--radius-md)]',
+              'w-full appearance-none bg-surface border rounded-md',
               'h-9 pl-3 pr-8 text-sm text-text-primary',
-              'transition-colors duration-[var(--transition-fast)]',
+              'transition-colors duration-(--transition-fast)',
               'focus:outline-none',
               'cursor-pointer',
               hasError

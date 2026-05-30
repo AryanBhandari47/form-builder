@@ -1,4 +1,4 @@
-import { StorageHydration } from "@/modules/storage/StorageHydration";
+import { StorageHydration } from "@/components/StorageHydration";
 import { StoreProvider } from "@/store/StoreProvider";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.className} h-full antialiased`}>
-      <body className="min-h-full">
+      <body className="min-h-full" suppressHydrationWarning>
         <StoreProvider>
           <StorageHydration />
           {children}

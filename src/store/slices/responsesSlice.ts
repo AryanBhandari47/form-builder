@@ -1,7 +1,6 @@
 import {
   createSlice,
   createEntityAdapter,
-  type PayloadAction,
 } from '@reduxjs/toolkit'
 import type { FormResponse } from '../../entities/response'
 

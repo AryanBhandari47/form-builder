@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
 
 export default function FillError({
@@ -10,7 +10,7 @@ export default function FillError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
-  React.useEffect(() => {
+  useEffect(() => {
     console.error('[FillPage error]', error)
   }, [error])
 

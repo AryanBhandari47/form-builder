@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeCalculation, computeAllCalculations } from '@/modules/calculation-engine/calculator'
+import { computeCalculation, computeAllCalculations } from '@/lib/calculator'
 import type {
   CalculationField,
   NumberField,

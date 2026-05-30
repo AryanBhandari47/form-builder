@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface TooltipProps {
-  content: React.ReactNode;
-  children: React.ReactNode;
+  content: ReactNode;
+  children: ReactNode;
   side?: "top" | "bottom" | "left" | "right";
   className?: string;
 }

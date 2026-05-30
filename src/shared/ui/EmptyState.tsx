@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8,10 +8,10 @@ import { cn } from '@/lib/utils'
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EmptyStateProps {
-  icon?: React.ReactNode
+  icon?: ReactNode
   title: string
   description?: string
-  action?: React.ReactNode
+  action?: ReactNode
   className?: string
 }
 
@@ -35,7 +35,7 @@ export function EmptyState({
       )}
     >
       {icon && (
-        <div className="flex items-center justify-center w-14 h-14 rounded-[var(--radius-lg)] bg-sidebar text-text-muted">
+        <div className="flex items-center justify-center w-14 h-14 rounded-lg bg-sidebar text-text-muted">
           {icon}
         </div>
       )}

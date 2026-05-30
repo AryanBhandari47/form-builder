@@ -1,11 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
   evaluateAll,
-  evaluateFieldVisibility,
   evaluateFieldRequired,
   buildDependencyGraph,
-} from '@/modules/conditional-engine/evaluator'
-import type { FormField, SingleSelectField, SingleLineField, NumberField } from '@/entities/field'
+} from '@/lib/evaluator'
+import type { FormField, SingleLineField, NumberField } from '@/entities/field'
 import type { FieldValue } from '@/entities/response'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -41,27 +40,6 @@ function makeNumberField(
     defaultVisibility: 'visible',
     defaultRequired: false,
     decimalPlaces: 0,
-    ...overrides,
-  }
-}
-
-function makeSelectField(
-  id: string,
-  overrides: Partial<SingleSelectField> = {}
-): SingleSelectField {
-  return {
-    id,
-    type: 'single-select',
-    label: `Select ${id}`,
-    order: 0,
-    conditions: [],
-    defaultVisibility: 'visible',
-    defaultRequired: false,
-    displayType: 'radio',
-    options: [
-      { id: 'opt-a', label: 'Option A' },
-      { id: 'opt-b', label: 'Option B' },
-    ],
     ...overrides,
   }
 }

@@ -1,6 +1,7 @@
 'use client'
 
-import * as React from 'react'
+import { forwardRef, useId } from 'react'
+import type { TextareaHTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8,7 +9,7 @@ import { cn } from '@/lib/utils'
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string
   error?: string
   hint?: string
@@ -19,12 +20,13 @@ export interface TextareaProps
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   function Textarea(
     { label, error, hint, className, id, rows = 4, ...rest },
     ref
   ) {
-    const textareaId = id ?? React.useId()
+    const generatedId = useId()
+    const textareaId = id ?? generatedId
     const hasError = Boolean(error)
 
     return (
@@ -51,10 +53,10 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
               : undefined
           }
           className={cn(
-            'w-full bg-surface border rounded-[var(--radius-md)]',
+            'w-full bg-surface border rounded-md',
             'px-3 py-2',
             'text-sm text-text-primary placeholder:text-text-muted',
-            'transition-colors duration-[var(--transition-fast)]',
+            'transition-colors duration-(--transition-fast)',
             'focus:outline-none',
             'resize-y',
             hasError

@@ -3,6 +3,7 @@ import templatesReducer from './slices/templatesSlice'
 import responsesReducer from './slices/responsesSlice'
 import builderUiReducer from './slices/builderUiSlice'
 import fillReducer from './slices/fillSlice'
+import appReducer from './slices/appSlice'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Store factory (exported so tests can create isolated instances)
@@ -11,21 +12,14 @@ import fillReducer from './slices/fillSlice'
 export function makeStore() {
   return configureStore({
     reducer: {
+      app: appReducer,
       templates: templatesReducer,
       responses: responsesReducer,
       builderUi: builderUiReducer,
       fill: fillReducer,
     },
-    // RTK's default middleware includes redux-thunk and serializability checks.
-    // We intentionally keep defaults — no additional middleware needed.
   })
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Singleton store for the app
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const store = makeStore()
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TypeScript helpers
@@ -34,3 +28,4 @@ export const store = makeStore()
 export type AppStore = ReturnType<typeof makeStore>
 export type RootState = ReturnType<AppStore['getState']>
 export type AppDispatch = AppStore['dispatch']
+
