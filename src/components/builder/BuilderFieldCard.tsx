@@ -1,10 +1,11 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState, useRef, useEffect, useMemo } from "react";
 import type { HTMLAttributes } from "react";
-import type { FormField } from "@/entities/field";
+import type { FormField, FieldType } from "@/entities/field";
 import { cn } from "@/lib/utils";
-import { ChevronUpIcon, ChevronDownIcon, GripIcon, TrashIcon } from "@/shared/ui";
+import { getAllFieldEntries } from "@/lib/field-registry/registry";
+import { ChevronUpIcon, ChevronDownIcon, GripIcon, TrashIcon, IconPlus } from "@/shared/ui";
 import { Badge } from "@/shared/ui";
 import { FieldIcon } from "./FieldIcon";
 import { FieldPreview } from "./FieldPreview";
@@ -30,6 +31,7 @@ export interface BuilderFieldCardProps {
   onDelete: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onAddField: (type: FieldType) => void;
   dragHandleProps: HTMLAttributes<HTMLElement>;
   itemProps: HTMLAttributes<HTMLElement>;
 }
@@ -43,9 +45,49 @@ export const BuilderFieldCard = memo(function BuilderFieldCard({
   onDelete,
   onMoveUp,
   onMoveDown,
+  onAddField,
   dragHandleProps,
   itemProps,
 }: BuilderFieldCardProps) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const addBtnRef = useRef<HTMLButtonElement>(null);
+
+  const fieldEntries = useMemo(() => getAllFieldEntries(), []);
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        addBtnRef.current &&
+        !addBtnRef.current.contains(e.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setDropdownOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [dropdownOpen]);
+
+  function handleAddBtnClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    setDropdownOpen((prev) => !prev);
+  }
+
+  function handleFieldSelect(type: FieldType) {
+    onAddField(type);
+    setDropdownOpen(false);
+  }
+
   return (
     <div
       role="option"
@@ -117,6 +159,15 @@ export const BuilderFieldCard = memo(function BuilderFieldCard({
       >
         <button
           type="button"
+          ref={addBtnRef}
+          aria-label="Add field after this"
+          onClick={handleAddBtnClick}
+          className="p-1 rounded text-text-muted hover:text-primary hover:bg-primary-light transition-colors"
+        >
+          <IconPlus />
+        </button>
+        <button
+          type="button"
           aria-label="Move field up"
           onClick={onMoveUp}
           disabled={isFirst}
@@ -142,6 +193,30 @@ export const BuilderFieldCard = memo(function BuilderFieldCard({
           <TrashIcon />
         </button>
       </div>
+
+      {dropdownOpen && (
+        <div
+          ref={dropdownRef}
+          className="absolute left-0 right-0 top-full mt-1 z-50 bg-surface border border-border rounded-md shadow-lg overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="max-h-60 overflow-y-auto py-1">
+            {fieldEntries.map((entry) => (
+              <button
+                key={entry.type}
+                type="button"
+                onClick={() => handleFieldSelect(entry.type)}
+                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left text-text-primary hover:bg-sidebar transition-colors"
+              >
+                <span className="shrink-0 text-text-secondary">
+                  <FieldIcon type={entry.type} className="w-4 h-4" />
+                </span>
+                <span>{entry.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 });

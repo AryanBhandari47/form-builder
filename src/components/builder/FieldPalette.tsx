@@ -119,7 +119,7 @@ export function FieldPalette({ templateId }: FieldPaletteProps) {
       type,
       order: existingFields.length,
       conditions: [],
-      defaultVisibility: "visible" as const,
+      defaultVisibility: "visible",
       defaultRequired: false,
       ...entry.defaultConfig,
     } as FormField;

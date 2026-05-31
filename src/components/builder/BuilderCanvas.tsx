@@ -107,7 +107,7 @@ export function BuilderCanvas({ templateId }: BuilderCanvasProps) {
           type: addType,
           order: 0,
           conditions: [],
-          defaultVisibility: "visible" as const,
+          defaultVisibility: "visible",
           defaultRequired: false,
           ...entry.defaultConfig,
         } as FormField;
@@ -163,6 +163,28 @@ export function BuilderCanvas({ templateId }: BuilderCanvasProps) {
     const newOrder = fields.map((f) => f.id);
     [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
     dispatch(reorderFields({ templateId, orderedIds: newOrder }));
+    dispatch(setDirty(true));
+  }
+
+  function handleAddField(type: FieldType, index: number) {
+    const entry = getFieldEntry(type);
+    const newField = {
+      id: generateId(),
+      type,
+      order: 0,
+      conditions: [],
+      defaultVisibility: "visible",
+      defaultRequired: false,
+      ...entry.defaultConfig,
+    } as FormField;
+
+    const newIds = [...fieldIds];
+    console.log(index);
+    newIds.splice(index + 1, 0, newField.id);
+
+    dispatch(addField({ templateId, field: newField }));
+    dispatch(reorderFields({ templateId, orderedIds: newIds }));
+    dispatch(setSelectedField(newField.id));
     dispatch(setDirty(true));
   }
 
@@ -258,6 +280,7 @@ export function BuilderCanvas({ templateId }: BuilderCanvasProps) {
             onDelete={() => {}}
             onMoveUp={() => {}}
             onMoveDown={() => {}}
+            onAddField={() => {}}
             dragHandleProps={{}}
             itemProps={{
               "data-drag-id": draggingField.id,
@@ -283,6 +306,7 @@ export function BuilderCanvas({ templateId }: BuilderCanvasProps) {
               onDelete={() => handleDelete(field.id)}
               onMoveUp={() => handleMoveUp(index)}
               onMoveDown={() => handleMoveDown(index)}
+              onAddField={(type) => handleAddField(type, index)}
               dragHandleProps={getDragHandleProps(field.id) as HTMLAttributes<HTMLElement>}
               itemProps={getItemProps(field.id) as HTMLAttributes<HTMLElement>}
             />
