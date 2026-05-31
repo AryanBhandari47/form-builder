@@ -248,6 +248,7 @@ export function FillForm({
     async (e: FormEvent) => {
       e.preventDefault();
       if (!template || isSubmitting) return;
+      if (template.fieldIds.length === 0) return;
 
       dispatch(setSubmitting(true));
 
@@ -439,7 +440,7 @@ export function FillForm({
         <div className="mt-8 pt-6 border-t border-border flex justify-center">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || (template && template.fieldIds.length === 0)}
             className={cn(
               "w-full sm:w-auto sm:min-w-40 py-3 px-6 rounded-sm font-medium text-sm",
               "bg-primary text-white hover:bg-primary-hover transition-colors",
