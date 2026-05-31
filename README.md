@@ -180,18 +180,6 @@ This keeps the server/client boundary at the page level. Client components that 
 
 ---
 
-## IndexedDB Migration Path
-
-The `StorageAdapter` interface is the seam:
-
-1. Create `src/lib/storage/indexedDb.adapter.ts` implementing `StorageAdapter` (using `idb`)
-2. Replace the singleton import in consuming files from `localStorage.adapter` → `indexedDb.adapter`
-3. Add a one-time migration in `StorageHydration.tsx`: on first run, copy `fb:*` localStorage entries into IDB, then clear localStorage
-
-No other files change. Redux store, selectors, and all components are adapter-agnostic.
-
----
-
 ## Testing Strategy
 
 Unit tests cover the two stateful engines — pure functions, deterministic, fast:
