@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo, memo, useEffect, useState } from "react";
+import { useRef, useMemo, useEffect, useState } from "react";
 import type { HTMLAttributes, RefObject } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "@/store";
@@ -12,229 +12,10 @@ import { useDragToReorder } from "@/hooks/useDragToReorder";
 import { useBuilderDrag } from "@/contexts/BuilderDragContext";
 import { getFieldEntry } from "@/lib/field-registry/registry";
 import { generateId, cn } from "@/lib/utils";
-import { ChevronUpIcon, ChevronDownIcon, GripIcon, TrashIcon, IconPlus } from "@/shared/ui";
-import { FieldIcon } from "./FieldIcon";
-import { FieldPreview } from "./FieldPreview";
-import { Badge } from "@/shared/ui";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Field type → display label (short)
-// ─────────────────────────────────────────────────────────────────────────────
-
-const TYPE_LABEL: Record<FormField["type"], string> = {
-  "single-line": "Text",
-  "multi-line": "Textarea",
-  number: "Number",
-  date: "Date",
-  "single-select": "Single Select",
-  "multi-select": "Multi Select",
-  "file-upload": "File Upload",
-  "section-header": "Section",
-  calculation: "Calc",
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// AddGhostCard — placeholder card shown in the list during palette-add drag
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface AddGhostCardProps {
-  fieldType: FieldType;
-  label: string;
-}
-
-function AddGhostCard({ fieldType, label }: AddGhostCardProps) {
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-3 p-3 rounded-md",
-        "border-2 border-dashed border-primary bg-primary-light/30",
-        "pointer-events-none select-none opacity-70"
-      )}
-    >
-      <span className="shrink-0 p-1">
-        <GripIcon />
-      </span>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="shrink-0 text-primary">
-            <FieldIcon type={fieldType} className="w-4 h-4" />
-          </span>
-          <span className="text-xs font-semibold text-primary truncate flex-1">
-            {label}
-          </span>
-          <Badge variant="default" className="shrink-0 text-[9px] py-0">
-            {TYPE_LABEL[fieldType]}
-          </Badge>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DragGhost — floating chip used only for palette-add mode
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface DragGhostProps {
-  x: number;
-  y: number;
-  label: string;
-  fieldType: FieldType;
-}
-
-function DragGhost({ x, y, label, fieldType }: DragGhostProps) {
-  return (
-    <div
-      style={{
-        position: "fixed",
-        left: x + 14,
-        top: y - 18,
-        pointerEvents: "none",
-        zIndex: 9999,
-      }}
-      className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-primary rounded-md shadow-lg text-xs font-medium text-primary max-w-[180px]"
-    >
-      <FieldIcon type={fieldType} className="w-3.5 h-3.5 shrink-0" />
-      <span className="truncate">{label}</span>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// BuilderFieldCard
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface BuilderFieldCardProps {
-  field: FormField;
-  isSelected: boolean;
-  isFirst: boolean;
-  isLast: boolean;
-  onSelect: () => void;
-  onDelete: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  dragHandleProps: HTMLAttributes<HTMLElement>;
-  itemProps: HTMLAttributes<HTMLElement>;
-}
-
-const BuilderFieldCard = memo(function BuilderFieldCard({
-  field,
-  isSelected,
-  isFirst,
-  isLast,
-  onSelect,
-  onDelete,
-  onMoveUp,
-  onMoveDown,
-  dragHandleProps,
-  itemProps,
-}: BuilderFieldCardProps) {
-  return (
-    <div
-      role="option"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onSelect();
-        }
-        if (itemProps.onKeyDown) {
-          (itemProps.onKeyDown as (e: React.KeyboardEvent) => void)(e);
-        }
-      }}
-      aria-selected={isSelected}
-      data-drag-id={(itemProps as { "data-drag-id"?: string })["data-drag-id"]}
-      style={(itemProps as { style?: React.CSSProperties }).style}
-      className={cn(
-        "group relative flex items-start gap-3 p-3 rounded-md",
-        "border cursor-pointer",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-        isSelected
-          ? "border-primary bg-primary-light/40 shadow-sm"
-          : "border-border bg-surface hover:border-primary/40 hover:shadow-sm"
-      )}
-    >
-      {/* Drag handle */}
-      <button
-        type="button"
-        aria-label="Drag to reorder"
-        onClick={(e) => e.stopPropagation()}
-        {...dragHandleProps}
-        className={cn(
-          "shrink-0 mt-0.5 p-1 rounded",
-          "text-text-muted hover:text-text-secondary",
-          "opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity",
-          "cursor-grab active:cursor-grabbing"
-        )}
-        tabIndex={0}
-      >
-        <GripIcon />
-      </button>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-2">
-          <span className={cn("shrink-0", isSelected ? "text-primary" : "text-text-secondary")}>
-            <FieldIcon type={field.type} className="w-4 h-4" />
-          </span>
-          <span className={cn("text-xs font-semibold truncate flex-1", isSelected ? "text-primary" : "text-text-primary")}>
-            {field.label}
-          </span>
-          <Badge variant="default" className="shrink-0 text-[9px] py-0">
-            {TYPE_LABEL[field.type]}
-          </Badge>
-          {field.defaultRequired && (
-            <span className="text-red text-xs font-semibold shrink-0" title="Required">*</span>
-          )}
-        </div>
-        <div className="pointer-events-none select-none">
-          <FieldPreview field={field} />
-        </div>
-      </div>
-
-      {/* Action buttons */}
-      <div
-        className={cn(
-          "flex flex-col gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity",
-          isSelected && "opacity-100"
-        )}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          aria-label="Move field up"
-          onClick={onMoveUp}
-          disabled={isFirst}
-          className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-sidebar disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronUpIcon />
-        </button>
-        <button
-          type="button"
-          aria-label="Move field down"
-          onClick={onMoveDown}
-          disabled={isLast}
-          className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-sidebar disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronDownIcon />
-        </button>
-        <button
-          type="button"
-          aria-label="Delete field"
-          onClick={onDelete}
-          className="p-1 rounded text-text-muted hover:text-red hover:bg-red-light transition-colors mt-1"
-        >
-          <TrashIcon />
-        </button>
-      </div>
-    </div>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// BuilderCanvas
-// ─────────────────────────────────────────────────────────────────────────────
+import { IconPlus } from "@/shared/ui";
+import { BuilderFieldCard } from "./BuilderFieldCard";
+import { AddGhostCard } from "./AddGhostCard";
+import { DragGhost } from "./DragGhost";
 
 interface BuilderCanvasProps {
   templateId: string;
@@ -278,7 +59,6 @@ export function BuilderCanvas({ templateId }: BuilderCanvasProps) {
       containerRef: canvasRef as RefObject<HTMLElement>,
     });
 
-  // Track cursor and handle drop for palette drag-to-add
   useEffect(() => {
     if (dragCtx.dragState.mode !== "add") {
       setAddInsertIndex(null);
@@ -398,7 +178,6 @@ export function BuilderCanvas({ templateId }: BuilderCanvasProps) {
   const { dragState } = dragCtx;
   const isAdding = dragState.mode === "add";
 
-  // Full-card clone for reorder drag
   const draggingField = reorderDragState.draggingId
     ? fields.find((f) => f.id === reorderDragState.draggingId) ?? null
     : null;
@@ -415,10 +194,10 @@ export function BuilderCanvas({ templateId }: BuilderCanvasProps) {
         )}
         <div className="text-center max-w-sm w-full">
           {isAdding && dragState.ghostFieldType && (
-              <div className="mb-4">
-                <AddGhostCard fieldType={dragState.ghostFieldType} label={dragState.ghostLabel} />
-              </div>
-            )}
+            <div className="mb-4">
+              <AddGhostCard fieldType={dragState.ghostFieldType} label={dragState.ghostLabel} />
+            </div>
+          )}
           <div className="w-16 h-16 rounded-lg bg-surface border border-border flex items-center justify-center mx-auto mb-4">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="text-text-muted">
               <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
@@ -451,12 +230,10 @@ export function BuilderCanvas({ templateId }: BuilderCanvasProps) {
       className="flex-1 flex flex-col bg-canvas overflow-y-auto"
       aria-label="Form canvas"
     >
-      {/* Palette-add ghost chip */}
       {isAdding && dragState.ghostFieldType && (
         <DragGhost x={dragState.ghostX} y={dragState.ghostY} label={dragState.ghostLabel} fieldType={dragState.ghostFieldType} />
       )}
 
-      {/* Full-card clone for reorder — fixed positioned, follows cursor imperatively */}
       {draggingField && reorderDragState.cardRect && (
         <div
           ref={cloneRef as unknown as RefObject<HTMLDivElement>}

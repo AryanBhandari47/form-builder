@@ -32,11 +32,11 @@ import {
 
 import "@/lib/field-registry";
 
-import { FieldPalette } from "@/components/FieldPalette";
-import { BuilderCanvas } from "@/components/BuilderCanvas";
-import { ConfigPanel } from "@/components/ConfigPanel";
-import { ResponsesPanel } from "@/components/ResponsesPanel";
-import { FillForm } from "@/components/FillForm";
+import { FieldPalette } from "@/components/builder/FieldPalette";
+import { BuilderCanvas } from "@/components/builder/BuilderCanvas";
+import { ConfigPanel } from "@/components/builder/ConfigPanel";
+import { ResponsesPanel } from "@/components/responses/ResponsesPanel";
+import { FillForm } from "@/components/fill-form/FillForm";
 
 import { TabButton } from "./TabButton";
 import { EditableTitle } from "./EditableTitle";

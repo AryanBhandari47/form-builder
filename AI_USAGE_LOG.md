@@ -56,24 +56,22 @@ Before coding, the entire UI was designed visually as interactive flows — temp
 
 **Prompt**: Implement a custom Pointer Events drag-to-reorder hook without libraries.
 
-**Verified**: `requestAnimationFrame` throttling prevents layout thrashing. Hit-testing via `elementFromPoint` correctly identifies drop targets.
+**Verified**: `requestAnimationFrame` throttling prevents layout thrashing. Insert index is computed by comparing cursor Y against each card's midpoint — correct at all scroll positions.
 
-**Rejected**: AI created a "ghost element" (cloned DOM node following the cursor). Problems: cloning React nodes causes hydration conflicts; absolutely positioned ghosts trigger layout on every `pointermove`. Replaced with CSS `opacity: 0.4` on the source + `outline` on the target — same UX signal, zero layout impact.
+**Iterated**: The initial implementation used a `overId` swap mechanic (blue outline on the hovered card) — jarring and imprecise. Replaced with a gap-based `insertIndex` model and animated `translateY` displacement on surrounding cards (150ms ease). The dragged card goes `visibility: hidden` in-place so its layout space is preserved; a fixed-position full-card clone follows the cursor imperatively via direct DOM mutation (`cloneRef.current.style.top`) — no React state update on every `pointermove`.
 
----
+**Extended**: Added drag-from-palette — field types in the left panel can be dragged onto the canvas at a specific position. A `BuilderDragContext` shared between `FieldPalette` and `BuilderCanvas` coordinates the two drag modes (`reorder` vs `add`). During palette drag, a dimmed placeholder card is injected into the flex column at the insertion point, physically pushing other cards aside. On drop, the real field appears in its place.
 
-## 6. Codebase Refactoring
-
-**Prompt**: Enforce Next.js App Router conventions and React 19 best practices.
-
-**Done**: Extracted client wrappers from all 4 `page.tsx` files (server → `*PageClient.tsx` pattern). Split multi-export files into one component per file (`Skeleton`, `ConfigRow` → individual files). Extracted shared icons into `Icons.tsx`. Moved helper functions to `lib/utils.ts`. Applied `<Activity>` to builder tabs for state preservation. Removed stale `src/modules/` references. Verified: clean build, zero TS errors.
+**Bug fixed**: Downward drops placed the card one slot too high. The `insertIndex - 1` adjustment in `handlePointerUp` was wrong — `getInsertIndexAtPoint` already operates in the N-1 remaining space, which is exactly what `reorder(items, fromIdx, toIdx)` expects. Removed the adjustment.
 
 ---
 
-## 7. Hydration Audit
+## 6. Codebase Refactoring & Hydration Audit
 
-**Prompt**: Audit the codebase for React hydration mismatches and fix architectural anti-patterns.
+**Prompt**: Enforce Next.js App Router conventions, React 19 best practices, and audit for hydration mismatches.
 
-**Findings**: Three `*PageClient.tsx` files maintained local `isHydrated` state — a component-local proxy for a global concern. `StoreProvider` used `useMemo` (RTK docs specify `useRef` + lazy init for concurrent mode).
+**Done**: Extracted client wrappers from all 4 `page.tsx` files (server → `*PageClient.tsx` pattern). Split multi-export files into one component per file (`Skeleton`, `ConfigRow` → individual files). Extracted shared icons into `Icons.tsx`. Moved helper functions to `lib/utils.ts`. Applied `<Activity>` to builder tabs for state preservation. Removed stale `src/modules/` references.
 
-**Fixed**: Added `storageReady` to a Redux `appSlice`. `useStorageHydration` dispatches `setStorageReady()` when hydration completes. `StoreProvider` uses `useState` lazy initializer (React 19's lint rules flag `ref.current` reads in render). `suppressHydrationWarning` on `<body>` for browser extension noise. Verified: all clean.
+**Hydration findings**: Three `*PageClient.tsx` files maintained local `isHydrated` state — a component-local proxy for a global concern. `StoreProvider` used `useMemo` (RTK docs specify `useRef` + lazy init for concurrent mode).
+
+**Fixed**: Added `storageReady` to a Redux `appSlice`. `useStorageHydration` dispatches `setStorageReady()` when hydration completes. `StoreProvider` uses `useState` lazy initializer (React 19's lint rules flag `ref.current` reads in render). `suppressHydrationWarning` on `<body>` for browser extension noise. Verified: clean build, zero TS errors.

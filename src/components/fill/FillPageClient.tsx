@@ -8,35 +8,8 @@ import { selectTemplateById } from "@/store/selectors/templateSelectors";
 import type { RootState } from "@/store";
 import { Spinner } from "@/shared/ui/Spinner";
 import { XIcon } from "@/shared/ui";
-import { FillForm } from "@/components/FillForm";
-
-function LogoIcon() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <rect
-        x="3"
-        y="5"
-        width="18"
-        height="14"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M7 9h10M7 13h7"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
+import { FillForm } from "@/components/fill-form/FillForm";
+import { LogoIcon } from "./LogoIcon";
 
 export default function FillPageClient({
   templateId,

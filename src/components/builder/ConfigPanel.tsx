@@ -7,16 +7,8 @@ import type { FormField } from "@/entities/field";
 import { selectTemplateFields } from "@/store/selectors/templateSelectors";
 import { cn } from "@/lib/utils";
 import { FieldIcon } from "./FieldIcon";
-import { ConditionsBuilder } from "./ConditionsBuilder";
-import { SingleLineConfig } from "./config/SingleLineConfig";
-import { MultiLineConfig } from "./config/MultiLineConfig";
-import { NumberConfig } from "./config/NumberConfig";
-import { DateConfig } from "./config/DateConfig";
-import { SingleSelectConfig } from "./config/SingleSelectConfig";
-import { MultiSelectConfig } from "./config/MultiSelectConfig";
-import { FileUploadConfig } from "./config/FileUploadConfig";
-import { SectionHeaderConfig } from "./config/SectionHeaderConfig";
-import { CalculationConfig } from "./config/CalculationConfig";
+import { ConditionsBuilder } from "@/components/conditions/ConditionsBuilder";
+import { FieldConfigForm } from "./FieldConfigForm";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Field type → friendly name
@@ -33,41 +25,6 @@ const TYPE_LABEL: Record<FormField["type"], string> = {
   "section-header": "Section Header",
   calculation: "Calculation",
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FieldConfigForm — dispatcher
-// ─────────────────────────────────────────────────────────────────────────────
-
-function FieldConfigForm({
-  templateId,
-  field,
-}: {
-  templateId: string;
-  field: FormField;
-}) {
-  switch (field.type) {
-    case "single-line":
-      return <SingleLineConfig templateId={templateId} field={field} />;
-    case "multi-line":
-      return <MultiLineConfig templateId={templateId} field={field} />;
-    case "number":
-      return <NumberConfig templateId={templateId} field={field} />;
-    case "date":
-      return <DateConfig templateId={templateId} field={field} />;
-    case "single-select":
-      return <SingleSelectConfig templateId={templateId} field={field} />;
-    case "multi-select":
-      return <MultiSelectConfig templateId={templateId} field={field} />;
-    case "file-upload":
-      return <FileUploadConfig templateId={templateId} field={field} />;
-    case "section-header":
-      return <SectionHeaderConfig templateId={templateId} field={field} />;
-    case "calculation":
-      return <CalculationConfig templateId={templateId} field={field} />;
-    default:
-      return null;
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tab type
