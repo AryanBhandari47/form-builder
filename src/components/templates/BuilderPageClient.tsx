@@ -1,47 +1,46 @@
 "use client";
 
-import { useRef, useState, useEffect, Suspense } from "react";
-import { Activity } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useSelector, useDispatch } from "react-redux";
-import type { RootState, AppDispatch } from "@/store";
-import { selectTemplateById } from "@/store/selectors/templateSelectors";
-import {
-  setSelectedField,
-  setDirty,
-  setActiveTab,
-  resetBuilderUi,
-} from "@/store/slices/builderUiSlice";
-import type { BuilderTab } from "@/store/slices/builderUiSlice";
-import {
-  upsertTemplate,
-  updateTemplateTitle,
-} from "@/store/slices/templatesSlice";
 import { storageAdapter } from "@/lib/storage";
 import { generateId } from "@/lib/utils";
 import { Button } from "@/shared/ui";
 import {
   IconArrowLeft,
-  IconShare,
-  IconSave,
   IconCheck,
   IconPalette,
+  IconSave,
   IconSettings,
+  IconShare,
 } from "@/shared/ui/Icons";
+import type { AppDispatch, RootState } from "@/store";
+import { selectTemplateById } from "@/store/selectors/templateSelectors";
+import type { BuilderTab } from "@/store/slices/builderUiSlice";
+import {
+  resetBuilderUi,
+  setActiveTab,
+  setDirty,
+  setSelectedField,
+} from "@/store/slices/builderUiSlice";
+import {
+  updateTemplateTitle,
+  upsertTemplate,
+} from "@/store/slices/templatesSlice";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Activity, useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import "@/lib/field-registry";
 
-import { FieldPalette } from "@/components/builder/FieldPalette";
 import { BuilderCanvas } from "@/components/builder/BuilderCanvas";
 import { ConfigPanel } from "@/components/builder/ConfigPanel";
-import { ResponsesPanel } from "@/components/responses/ResponsesPanel";
+import { FieldPalette } from "@/components/builder/FieldPalette";
 import { FillForm } from "@/components/fill-form/FillForm";
+import { ResponsesPanel } from "@/components/responses/ResponsesPanel";
 
-import { TabButton } from "./TabButton";
+import { BuilderDragProvider } from "@/contexts/BuilderDragContext";
 import { EditableTitle } from "./EditableTitle";
 import { MobileDrawer } from "./MobileDrawer";
-import { BuilderDragProvider } from "@/contexts/BuilderDragContext";
+import { TabButton } from "./TabButton";
 
 function BuilderPage({
   templateId: initialTemplateId,
@@ -72,6 +71,9 @@ function BuilderPage({
     (state: RootState) => state.builderUi.activeTab
   );
   const isDirty = useSelector((state: RootState) => state.builderUi.isDirty);
+  const storageReady = useSelector(
+    (state: RootState) => state.app.storageReady
+  );
 
   const initialTabFromUrl = (tab as BuilderTab | null) ?? "build";
 
@@ -82,8 +84,6 @@ function BuilderPage({
   const template = useSelector((state: RootState) =>
     templateId ? selectTemplateById(templateId)(state) : null
   );
-
-  const title = template?.title ?? "Untitled Form";
 
   useEffect(() => {
     if (isNew) {
@@ -139,7 +139,7 @@ function BuilderPage({
     }
   }
 
-  if (!templateId) {
+  if (!templateId || !storageReady) {
     return (
       <div className="flex flex-col h-screen overflow-hidden bg-canvas items-center justify-center">
         <div className="text-sm text-text-muted">Creating form…</div>
@@ -159,7 +159,10 @@ function BuilderPage({
           >
             <IconArrowLeft />
           </Link>
-          <EditableTitle value={title} onChange={handleTitleChange} />
+          <EditableTitle
+            value={template?.title || "Untitled Form"}
+            onChange={handleTitleChange}
+          />
           {isDirty && (
             <span className="text-[10px] text-text-muted shrink-0 ml-1">
               • Unsaved
@@ -232,88 +235,88 @@ function BuilderPage({
 
       {/* Content */}
       <BuilderDragProvider>
-      <div className="flex-1 flex overflow-hidden relative h-0">
-        {/* Build tab */}
-        <Activity mode={activeTab === "build" ? "visible" : "hidden"}>
-          <div className="flex-1 flex overflow-hidden flex-col h-full">
-            {/* Desktop: 3-panel layout */}
-            <div className="hidden md:flex flex-1 overflow-hidden">
-              <div className="w-60 shrink-0 overflow-hidden">
-                <FieldPalette templateId={templateId} />
+        <div className="flex-1 flex overflow-hidden relative h-0">
+          {/* Build tab */}
+          <Activity mode={activeTab === "build" ? "visible" : "hidden"}>
+            <div className="flex-1 flex overflow-hidden flex-col h-full">
+              {/* Desktop: 3-panel layout */}
+              <div className="hidden md:flex flex-1 overflow-hidden">
+                <div className="w-60 shrink-0 overflow-hidden">
+                  <FieldPalette templateId={templateId} />
+                </div>
+                <div className="flex-1 overflow-hidden flex flex-col">
+                  <BuilderCanvas templateId={templateId} />
+                </div>
+                <div className="w-80 shrink-0 overflow-hidden">
+                  <ConfigPanel templateId={templateId} />
+                </div>
               </div>
-              <div className="flex-1 overflow-hidden flex flex-col">
-                <BuilderCanvas templateId={templateId} />
-              </div>
-              <div className="w-80 shrink-0 overflow-hidden">
-                <ConfigPanel templateId={templateId} />
+
+              {/* Mobile: canvas only with floating buttons */}
+              <div className="flex md:hidden flex-1 overflow-hidden flex-col">
+                <div className="flex-1 overflow-hidden flex flex-col">
+                  <BuilderCanvas templateId={templateId} />
+                </div>
+                <div className="flex items-center justify-center gap-3 py-2 border-t border-border bg-surface shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setMobileDrawer("palette")}
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-text-secondary hover:bg-primary-light rounded-sm transition-colors"
+                  >
+                    <IconPalette />
+                    Fields
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileDrawer("config")}
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-text-secondary hover:bg-primary-light rounded-sm transition-colors"
+                  >
+                    <IconSettings />
+                    Config
+                  </button>
+                </div>
               </div>
             </div>
+          </Activity>
 
-            {/* Mobile: canvas only with floating buttons */}
-            <div className="flex md:hidden flex-1 overflow-hidden flex-col">
-              <div className="flex-1 overflow-hidden flex flex-col">
-                <BuilderCanvas templateId={templateId} />
-              </div>
-              <div className="flex items-center justify-center gap-3 py-2 border-t border-border bg-surface shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setMobileDrawer("palette")}
-                  className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-text-secondary hover:bg-primary-light rounded-sm transition-colors"
-                >
-                  <IconPalette />
-                  Fields
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMobileDrawer("config")}
-                  className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-text-secondary hover:bg-primary-light rounded-sm transition-colors"
-                >
-                  <IconSettings />
-                  Config
-                </button>
-              </div>
-            </div>
-          </div>
-        </Activity>
+          {/* Mobile drawers for Build tab */}
+          <MobileDrawer
+            open={mobileDrawer === "palette"}
+            onClose={() => setMobileDrawer(null)}
+            title="Add Field"
+          >
+            <FieldPalette templateId={templateId} />
+          </MobileDrawer>
+          <MobileDrawer
+            open={mobileDrawer === "config"}
+            onClose={() => setMobileDrawer(null)}
+            title="Field Config"
+          >
+            <ConfigPanel templateId={templateId} />
+          </MobileDrawer>
 
-        {/* Mobile drawers for Build tab */}
-        <MobileDrawer
-          open={mobileDrawer === "palette"}
-          onClose={() => setMobileDrawer(null)}
-          title="Add Field"
-        >
-          <FieldPalette templateId={templateId} />
-        </MobileDrawer>
-        <MobileDrawer
-          open={mobileDrawer === "config"}
-          onClose={() => setMobileDrawer(null)}
-          title="Field Config"
-        >
-          <ConfigPanel templateId={templateId} />
-        </MobileDrawer>
-
-        {/* Preview tab */}
-        <Activity mode={activeTab === "preview" ? "visible" : "hidden"}>
-          <div className="flex-1 overflow-y-auto bg-canvas h-full">
-            <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10">
-              <div className="bg-surface rounded-xl border border-border p-4 sm:p-8 shadow-sm">
-                <FillForm
-                  key={`preview-${templateId}`}
-                  templateId={templateId}
-                  responseId="new"
-                />
+          {/* Preview tab */}
+          <Activity mode={activeTab === "preview" ? "visible" : "hidden"}>
+            <div className="flex-1 overflow-y-auto bg-canvas h-full">
+              <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10">
+                <div className="bg-surface rounded-xl border border-border p-4 sm:p-8 shadow-sm">
+                  <FillForm
+                    key={`preview-${templateId}`}
+                    templateId={templateId}
+                    responseId="new"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </Activity>
+          </Activity>
 
-        {/* Responses tab */}
-        <Activity mode={activeTab === "responses" ? "visible" : "hidden"}>
-          <div className="flex-1 h-full">
-            <ResponsesPanel templateId={templateId} />
-          </div>
-        </Activity>
-      </div>
+          {/* Responses tab */}
+          <Activity mode={activeTab === "responses" ? "visible" : "hidden"}>
+            <div className="flex-1 h-full">
+              <ResponsesPanel templateId={templateId} />
+            </div>
+          </Activity>
+        </div>
       </BuilderDragProvider>
     </div>
   );
@@ -326,9 +329,5 @@ export default function BuilderPageClient({
   templateId: string;
   tab?: string;
 }) {
-  return (
-    <Suspense>
-      <BuilderPage templateId={templateId} tab={tab} />
-    </Suspense>
-  );
+  return <BuilderPage templateId={templateId} tab={tab} />;
 }

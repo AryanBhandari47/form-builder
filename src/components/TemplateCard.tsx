@@ -2,11 +2,16 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
 import type { FormTemplate } from "@/entities/template";
+import type { AppDispatch } from "@/store";
+import { removeTemplate } from "@/store/slices/templatesSlice";
+import { storageAdapter } from "@/lib/storage";
 import { formatRelativeDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/shared/ui/Badge";
 import { Button } from "@/shared/ui/Button";
+import { TrashIcon } from "@/shared/ui/Icons";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -38,10 +43,19 @@ function TemplateIcon({ title }: { title: string }) {
 
 export function TemplateCard({ template, className }: TemplateCardProps) {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const fieldCount = template.fieldIds.length;
 
   function handleCardClick() {
     router.push(`/templates/${template.id}`);
+  }
+
+  function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!window.confirm(`Delete "${template.title}"? This cannot be undone.`))
+      return;
+    dispatch(removeTemplate(template.id));
+    storageAdapter.deleteTemplate(template.id);
   }
 
   function handleUseTemplate(e: React.MouseEvent) {
@@ -73,7 +87,21 @@ export function TemplateCard({ template, className }: TemplateCardProps) {
         {/* Icon + badge row */}
         <div className="flex items-center justify-between gap-2">
           <TemplateIcon title={template.title} />
-          <Badge variant="info">Form</Badge>
+          <div className="flex items-center gap-1">
+            <Badge variant="info">Form</Badge>
+            <button
+              type="button"
+              onClick={handleDelete}
+              title="Delete template"
+              className="
+                opacity-0 group-hover:opacity-100 transition-opacity
+                p-1 rounded-sm text-text-muted hover:text-red-500
+                hover:bg-red-50
+              "
+            >
+              <TrashIcon />
+            </button>
+          </div>
         </div>
 
         {/* Title */}
