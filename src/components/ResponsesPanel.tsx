@@ -165,7 +165,7 @@ export function ResponsesPanel({ templateId }: ResponsesPanelProps) {
                           <Link
                             href={`/fill/${templateId}/${response.id}`}
                             title="View response"
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] text-text-secondary hover:text-primary hover:bg-primary-light rounded transition-colors border border-border hover:border-primary whitespace-nowrap"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] text-text-secondary hover:bg-primary-light rounded transition-colors border border-border hover:border-primary whitespace-nowrap"
                           >
                             <EyeIcon />
                             View
@@ -173,7 +173,7 @@ export function ResponsesPanel({ templateId }: ResponsesPanelProps) {
                           <Link
                             href={`/print/${response.id}`}
                             title="Download PDF"
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] text-text-secondary hover:text-primary hover:bg-primary-light rounded transition-colors border border-border hover:border-primary whitespace-nowrap"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] text-text-secondary hover:bg-primary-light rounded transition-colors border border-border hover:border-primary whitespace-nowrap"
                           >
                             <DownloadIcon />
                             PDF
@@ -222,14 +222,14 @@ export function ResponsesPanel({ templateId }: ResponsesPanelProps) {
                       <div className="flex items-center gap-2 pt-1 border-t border-border">
                         <Link
                           href={`/fill/${templateId}/${response.id}`}
-                          className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-xs text-text-secondary hover:text-primary hover:bg-primary-light rounded transition-colors border border-border hover:border-primary"
+                          className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-xs text-text-secondary hover:bg-primary-light rounded transition-colors border border-border hover:border-primary"
                         >
                           <EyeIcon />
                           View
                         </Link>
                         <Link
                           href={`/print/${response.id}`}
-                          className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-xs text-text-secondary hover:text-primary hover:bg-primary-light rounded transition-colors border border-border hover:border-primary"
+                          className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-xs text-text-secondary hover:bg-primary-light rounded transition-colors border border-border hover:border-primary"
                         >
                           <DownloadIcon />
                           PDF

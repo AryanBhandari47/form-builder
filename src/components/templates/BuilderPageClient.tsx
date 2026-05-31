@@ -18,7 +18,7 @@ import {
   upsertTemplate,
   updateTemplateTitle,
 } from "@/store/slices/templatesSlice";
-import { localStorageAdapter } from "@/lib/storage/localStorage.adapter";
+import { storageAdapter } from "@/lib/storage";
 import { generateId } from "@/lib/utils";
 import { Button } from "@/shared/ui";
 import {
@@ -41,6 +41,7 @@ import { FillForm } from "@/components/FillForm";
 import { TabButton } from "./TabButton";
 import { EditableTitle } from "./EditableTitle";
 import { MobileDrawer } from "./MobileDrawer";
+import { BuilderDragProvider } from "@/contexts/BuilderDragContext";
 
 function BuilderPage({
   templateId: initialTemplateId,
@@ -127,7 +128,7 @@ function BuilderPage({
     if (!templateId || !template) return;
     setIsSaving(true);
     try {
-      await localStorageAdapter.saveTemplate(template);
+      await storageAdapter.saveTemplate(template);
       dispatch(setDirty(false));
       setSavedRecently(true);
       setTimeout(() => setSavedRecently(false), 2500);
@@ -230,6 +231,7 @@ function BuilderPage({
       </header>
 
       {/* Content */}
+      <BuilderDragProvider>
       <div className="flex-1 flex overflow-hidden relative h-0">
         {/* Build tab */}
         <Activity mode={activeTab === "build" ? "visible" : "hidden"}>
@@ -256,7 +258,7 @@ function BuilderPage({
                 <button
                   type="button"
                   onClick={() => setMobileDrawer("palette")}
-                  className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-text-secondary hover:text-primary hover:bg-primary-light rounded-sm transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-text-secondary hover:bg-primary-light rounded-sm transition-colors"
                 >
                   <IconPalette />
                   Fields
@@ -264,7 +266,7 @@ function BuilderPage({
                 <button
                   type="button"
                   onClick={() => setMobileDrawer("config")}
-                  className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-text-secondary hover:text-primary hover:bg-primary-light rounded-sm transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-text-secondary hover:bg-primary-light rounded-sm transition-colors"
                 >
                   <IconSettings />
                   Config
@@ -312,6 +314,7 @@ function BuilderPage({
           </div>
         </Activity>
       </div>
+      </BuilderDragProvider>
     </div>
   );
 }

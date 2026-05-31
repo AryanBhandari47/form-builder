@@ -10,8 +10,8 @@ import type {
   FieldCondition,
   ConditionalOperator,
   FieldType,
-} from '@/entities/field'
-import type { FieldValue } from '@/entities/response'
+} from "@/entities/field";
+import type { FieldValue } from "@/entities/response";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Dependency graph
@@ -21,7 +21,7 @@ import type { FieldValue } from '@/entities/response'
  * Maps fieldId → set of fieldIds that have conditions targeting that field.
  * i.e. if fieldB has a condition targeting fieldA, then graph[fieldA] = {fieldB, ...}
  */
-export type DependencyGraph = Record<string, Set<string>>
+export type DependencyGraph = Record<string, Set<string>>;
 
 /**
  * Build a dependency graph from a field map.
@@ -32,23 +32,23 @@ export type DependencyGraph = Record<string, Set<string>>
 export function buildDependencyGraph(
   fields: Record<string, FormField>
 ): DependencyGraph {
-  const graph: DependencyGraph = {}
+  const graph: DependencyGraph = {};
 
   for (const [fieldId, field] of Object.entries(fields)) {
     for (const condition of field.conditions) {
-      const { targetFieldId } = condition
+      const { targetFieldId } = condition;
 
       // Skip self-references
-      if (targetFieldId === fieldId) continue
+      if (targetFieldId === fieldId) continue;
 
       if (!graph[targetFieldId]) {
-        graph[targetFieldId] = new Set<string>()
+        graph[targetFieldId] = new Set<string>();
       }
-      graph[targetFieldId].add(fieldId)
+      graph[targetFieldId].add(fieldId);
     }
   }
 
-  return graph
+  return graph;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,24 +56,29 @@ export function buildDependencyGraph(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Operators supported by each field type when used as a condition target */
-const SUPPORTED_OPERATORS: Record<FieldType, ReadonlyArray<ConditionalOperator>> = {
-  'single-line': ['equals', 'not-equals', 'contains'],
-  'multi-line': ['equals', 'not-equals', 'contains'],
-  number: ['equals', 'greater-than', 'less-than', 'within-range'],
-  date: ['equals', 'is-before', 'is-after'],
-  'single-select': ['equals', 'not-equals'],
-  'multi-select': ['contains-any', 'contains-all', 'contains-none'],
+const SUPPORTED_OPERATORS: Record<
+  FieldType,
+  ReadonlyArray<ConditionalOperator>
+> = {
+  "single-line": ["equals", "not-equals", "contains"],
+  "multi-line": ["equals", "not-equals", "contains"],
+  number: ["equals", "greater-than", "less-than", "within-range"],
+  date: ["equals", "is-before", "is-after"],
+  "single-select": ["equals", "not-equals"],
+  "multi-select": ["contains-any", "contains-all", "contains-none"],
   // Non-input types — conditions on these are not evaluated
-  'file-upload': [],
-  'section-header': [],
+  "file-upload": [],
+  "section-header": [],
   calculation: [],
-}
+};
 
 function isValidOperatorForType(
   fieldType: FieldType,
   operator: ConditionalOperator
 ): boolean {
-  return (SUPPORTED_OPERATORS[fieldType] as ConditionalOperator[]).includes(operator)
+  return (SUPPORTED_OPERATORS[fieldType] as ConditionalOperator[]).includes(
+    operator
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -89,92 +94,93 @@ function evaluateCondition(
   targetValue: FieldValue,
   targetFieldType: FieldType
 ): boolean {
-  const { operator, value: conditionValue } = condition
+  const { operator, value: conditionValue } = condition;
 
   // Guard: ensure operator is valid for this field type
   if (!isValidOperatorForType(targetFieldType, operator)) {
-    return false
+    return false;
   }
 
   switch (operator) {
     // ── Text ──────────────────────────────────────────────────────────────
-    case 'equals': {
-      if (targetValue === null || targetValue === undefined) return false
-      const strVal = String(targetValue)
-      return strVal === String(conditionValue)
+    case "equals": {
+      if (targetValue === null || targetValue === undefined) return false;
+      const strVal = String(targetValue);
+      return strVal === String(conditionValue);
     }
 
-    case 'not-equals': {
-      if (targetValue === null || targetValue === undefined) return true
-      const strVal = String(targetValue)
-      return strVal !== String(conditionValue)
+    case "not-equals": {
+      if (targetValue === null || targetValue === undefined) return true;
+      const strVal = String(targetValue);
+      return strVal !== String(conditionValue);
     }
 
-    case 'contains': {
-      if (targetValue === null || targetValue === undefined) return false
+    case "contains": {
+      if (targetValue === null || targetValue === undefined) return false;
       return String(targetValue)
         .toLowerCase()
-        .includes(String(conditionValue).toLowerCase())
+        .includes(String(conditionValue).toLowerCase());
     }
 
     // ── Number ────────────────────────────────────────────────────────────
-    case 'greater-than': {
-      if (typeof targetValue !== 'number') return false
-      return targetValue > Number(conditionValue)
+    case "greater-than": {
+      if (typeof targetValue !== "number") return false;
+      return targetValue > Number(conditionValue);
     }
 
-    case 'less-than': {
-      if (typeof targetValue !== 'number') return false
-      return targetValue < Number(conditionValue)
+    case "less-than": {
+      if (typeof targetValue !== "number") return false;
+      return targetValue < Number(conditionValue);
     }
 
-    case 'within-range': {
-      if (typeof targetValue !== 'number') return false
-      if (!Array.isArray(conditionValue) || conditionValue.length !== 2) return false
-      const [minStr, maxStr] = conditionValue as string[]
-      const min = Number(minStr)
-      const max = Number(maxStr)
-      return targetValue >= min && targetValue <= max
+    case "within-range": {
+      if (typeof targetValue !== "number") return false;
+      if (!Array.isArray(conditionValue) || conditionValue.length !== 2)
+        return false;
+      const [minStr, maxStr] = conditionValue as string[];
+      const min = Number(minStr);
+      const max = Number(maxStr);
+      return targetValue >= min && targetValue <= max;
     }
 
     // ── Date ──────────────────────────────────────────────────────────────
-    case 'is-before': {
-      if (typeof targetValue !== 'string' || !targetValue) return false
-      return targetValue < String(conditionValue)
+    case "is-before": {
+      if (typeof targetValue !== "string" || !targetValue) return false;
+      return targetValue < String(conditionValue);
     }
 
-    case 'is-after': {
-      if (typeof targetValue !== 'string' || !targetValue) return false
-      return targetValue > String(conditionValue)
+    case "is-after": {
+      if (typeof targetValue !== "string" || !targetValue) return false;
+      return targetValue > String(conditionValue);
     }
 
     // ── Multi-Select ──────────────────────────────────────────────────────
-    case 'contains-any': {
-      if (!Array.isArray(targetValue)) return false
-      if (!Array.isArray(conditionValue)) return false
-      const condArr = conditionValue as string[]
-      return (targetValue as string[]).some((v) => condArr.includes(v))
+    case "contains-any": {
+      if (!Array.isArray(targetValue)) return false;
+      if (!Array.isArray(conditionValue)) return false;
+      const condArr = conditionValue as string[];
+      return (targetValue as string[]).some((v) => condArr.includes(v));
     }
 
-    case 'contains-all': {
-      if (!Array.isArray(targetValue)) return false
-      if (!Array.isArray(conditionValue)) return false
-      const condArr = conditionValue as string[]
-      return condArr.every((v) => (targetValue as string[]).includes(v))
+    case "contains-all": {
+      if (!Array.isArray(targetValue)) return false;
+      if (!Array.isArray(conditionValue)) return false;
+      const condArr = conditionValue as string[];
+      return condArr.every((v) => (targetValue as string[]).includes(v));
     }
 
-    case 'contains-none': {
-      if (!Array.isArray(targetValue)) return true
-      if (!Array.isArray(conditionValue)) return true
-      const condArr = conditionValue as string[]
-      return !(targetValue as string[]).some((v) => condArr.includes(v))
+    case "contains-none": {
+      if (!Array.isArray(targetValue)) return true;
+      if (!Array.isArray(conditionValue)) return true;
+      const condArr = conditionValue as string[];
+      return !(targetValue as string[]).some((v) => condArr.includes(v));
     }
 
     default: {
       // Exhaustive check — TypeScript will warn if we miss a case
-      const _exhaustive: never = operator
-      void _exhaustive
-      return false
+      const _exhaustive: never = operator;
+      void _exhaustive;
+      return false;
     }
   }
 }
@@ -195,37 +201,37 @@ export function evaluateFieldVisibility(
   values: Record<string, FieldValue>,
   fields: Record<string, FormField>
 ): boolean {
-  const defaultVisible = field.defaultVisibility === 'visible'
+  const defaultVisible = field.defaultVisibility === "visible";
 
-  if (field.conditions.length === 0) return defaultVisible
+  if (field.conditions.length === 0) return defaultVisible;
 
   // Separate show/hide conditions from required/not-required conditions
   const visibilityConditions = field.conditions.filter(
-    (c) => c.effect === 'show' || c.effect === 'hide'
-  )
+    (c) => c.effect === "show" || c.effect === "hide"
+  );
 
-  if (visibilityConditions.length === 0) return defaultVisible
+  if (visibilityConditions.length === 0) return defaultVisible;
 
   // All visibility conditions must pass (AND logic)
   const allPass = visibilityConditions.every((condition) => {
     // Skip self-referencing conditions
-    if (condition.targetFieldId === field.id) return true
+    if (condition.targetFieldId === field.id) return true;
 
-    const targetField = fields[condition.targetFieldId]
-    if (!targetField) return true // target doesn't exist, skip
+    const targetField = fields[condition.targetFieldId];
+    if (!targetField) return true; // target doesn't exist, skip
 
-    const targetValue = values[condition.targetFieldId] ?? null
-    return evaluateCondition(condition, targetValue, targetField.type)
-  })
+    const targetValue = values[condition.targetFieldId] ?? null;
+    return evaluateCondition(condition, targetValue, targetField.type);
+  });
 
-  if (!allPass) return defaultVisible
+  if (!allPass) return defaultVisible;
 
   // All conditions passed — apply the first visibility effect found
-  const firstVisibilityEffect = visibilityConditions[0]?.effect
-  if (firstVisibilityEffect === 'show') return true
-  if (firstVisibilityEffect === 'hide') return false
+  const firstVisibilityEffect = visibilityConditions[0]?.effect;
+  if (firstVisibilityEffect === "show") return true;
+  if (firstVisibilityEffect === "hide") return false;
 
-  return defaultVisible
+  return defaultVisible;
 }
 
 /**
@@ -241,33 +247,34 @@ export function evaluateFieldRequired(
   isVisible: boolean
 ): boolean {
   // section-header and calculation never capture user input
-  if (field.type === 'section-header' || field.type === 'calculation') return false
+  if (field.type === "section-header" || field.type === "calculation")
+    return false;
   // A hidden field is never required
-  if (!isVisible) return false
+  if (!isVisible) return false;
 
   const requiredConditions = field.conditions.filter(
-    (c) => c.effect === 'mark-required' || c.effect === 'mark-not-required'
-  )
+    (c) => c.effect === "mark-required" || c.effect === "mark-not-required"
+  );
 
-  if (requiredConditions.length === 0) return field.defaultRequired
+  if (requiredConditions.length === 0) return field.defaultRequired;
 
   const allPass = requiredConditions.every((condition) => {
-    if (condition.targetFieldId === field.id) return true
+    if (condition.targetFieldId === field.id) return true;
 
-    const targetField = fields[condition.targetFieldId]
-    if (!targetField) return true
+    const targetField = fields[condition.targetFieldId];
+    if (!targetField) return true;
 
-    const targetValue = values[condition.targetFieldId] ?? null
-    return evaluateCondition(condition, targetValue, targetField.type)
-  })
+    const targetValue = values[condition.targetFieldId] ?? null;
+    return evaluateCondition(condition, targetValue, targetField.type);
+  });
 
-  if (!allPass) return field.defaultRequired
+  if (!allPass) return field.defaultRequired;
 
-  const firstRequiredEffect = requiredConditions[0]?.effect
-  if (firstRequiredEffect === 'mark-required') return true
-  if (firstRequiredEffect === 'mark-not-required') return false
+  const firstRequiredEffect = requiredConditions[0]?.effect;
+  if (firstRequiredEffect === "mark-required") return true;
+  if (firstRequiredEffect === "mark-not-required") return false;
 
-  return field.defaultRequired
+  return field.defaultRequired;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -275,8 +282,8 @@ export function evaluateFieldRequired(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EvaluationResult {
-  visibility: Record<string, boolean>
-  required: Record<string, boolean>
+  visibility: Record<string, boolean>;
+  required: Record<string, boolean>;
 }
 
 /**
@@ -288,19 +295,19 @@ export function evaluateAll(
   fields: Record<string, FormField>,
   values: Record<string, FieldValue>
 ): EvaluationResult {
-  const visibility: Record<string, boolean> = {}
-  const required: Record<string, boolean> = {}
+  const visibility: Record<string, boolean> = {};
+  const required: Record<string, boolean> = {};
 
   for (const fieldId of fieldIds) {
-    const field = fields[fieldId]
-    if (!field) continue
+    const field = fields[fieldId];
+    if (!field) continue;
 
-    const isVisible = evaluateFieldVisibility(field, values, fields)
-    const isRequired = evaluateFieldRequired(field, values, fields, isVisible)
+    const isVisible = evaluateFieldVisibility(field, values, fields);
+    const isRequired = evaluateFieldRequired(field, values, fields, isVisible);
 
-    visibility[fieldId] = isVisible
-    required[fieldId] = isRequired
+    visibility[fieldId] = isVisible;
+    required[fieldId] = isRequired;
   }
 
-  return { visibility, required }
+  return { visibility, required };
 }

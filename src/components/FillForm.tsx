@@ -25,7 +25,7 @@ import { incrementResponseCount } from "@/store/slices/templatesSlice";
 import { evaluateAll } from "@/lib/evaluator";
 import { computeAllCalculations } from "@/lib/calculator";
 import { getFieldEntry } from "@/lib/field-registry";
-import { localStorageAdapter } from "@/lib/storage/localStorage.adapter";
+import { storageAdapter } from "@/lib/storage";
 import { selectResponseById } from "@/store/selectors/responseSelectors";
 import { generateId, formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -401,8 +401,8 @@ export function FillForm({
 
       dispatch(addResponse(response));
       dispatch(incrementResponseCount(template.id));
-      await localStorageAdapter.saveResponse(response);
-      await localStorageAdapter.saveTemplate({
+      await storageAdapter.saveResponse(response);
+      await storageAdapter.saveTemplate({
         ...template,
         responseCount: template.responseCount + 1,
         updatedAt: new Date().toISOString(),

@@ -73,6 +73,9 @@ const templatesSlice = createSlice({
     /** Insert or completely replace a template */
     upsertTemplate: templatesAdapter.upsertOne,
 
+    /** Insert or replace many templates in a single dispatch */
+    upsertMany: templatesAdapter.upsertMany,
+
     /** Remove a template and all its fields */
     removeTemplate: templatesAdapter.removeOne,
 
@@ -180,6 +183,7 @@ const templatesSlice = createSlice({
 
 export const {
   upsertTemplate,
+  upsertMany,
   removeTemplate,
   updateTemplateTitle,
   updateTemplateDescription,

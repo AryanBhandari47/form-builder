@@ -1,20 +1,25 @@
 'use client'
 
 import * as React from 'react'
+import type { FieldType } from '@/entities/field'
+import { useBuilderDrag } from '@/contexts/BuilderDragContext'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface DragState {
-  draggingId: string | null
-  overId: string | null
-}
-
 interface UseDragToReorderOptions {
   items: string[]
+  itemMeta: Record<string, { label: string; type: FieldType }>
   onReorder: (newOrder: string[]) => void
   containerRef: React.RefObject<HTMLElement>
+}
+
+export interface ReorderDragState {
+  draggingId: string | null
+  insertIndex: number | null
+  /** DOMRect of the card at drag-start — used to position the full-card clone */
+  cardRect: DOMRect | null
 }
 
 interface DragHandleProps {
@@ -26,6 +31,7 @@ interface DragHandleProps {
 interface ItemProps {
   'data-drag-id': string
   style: React.CSSProperties
+  onKeyDown: (e: React.KeyboardEvent) => void
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -41,19 +47,44 @@ function reorder<T>(list: T[], fromIndex: number, toIndex: number): T[] {
   return result
 }
 
-function getItemIdAtPoint(
+function getInsertIndexAtPoint(
   containerEl: HTMLElement,
-  x: number,
-  y: number
-): string | null {
-  const els = containerEl.querySelectorAll<HTMLElement>('[data-drag-id]')
-  for (const el of Array.from(els)) {
-    const rect = el.getBoundingClientRect()
-    if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-      return el.getAttribute('data-drag-id')
-    }
+  y: number,
+  draggingId: string | null
+): number {
+  const els = Array.from(
+    containerEl.querySelectorAll<HTMLElement>('[data-drag-id]')
+  ).filter((el) => el.getAttribute('data-drag-id') !== draggingId)
+
+  if (els.length === 0) return 0
+
+  for (let i = 0; i < els.length; i++) {
+    const rect = els[i].getBoundingClientRect()
+    const mid = rect.top + rect.height / 2
+    if (y < mid) return i
   }
-  return null
+
+  return els.length
+}
+
+/**
+ * Compute how many pixels a non-dragged item at index `i` should shift.
+ * fromIndex: original index of the dragged item
+ * insertIndex: target gap (0 = before first, N = after last, in the N-1 remaining array)
+ * cardHeight + gap = full height one card occupies in the list
+ */
+function getDisplacement(
+  i: number,
+  fromIndex: number,
+  insertIndex: number,
+  cardHeight: number,
+  gap: number
+): number {
+  // remI: position of item i in the N-1 remaining array (after removing fromIndex)
+  const remI = i < fromIndex ? i : i - 1
+  // finalI: where remI ends up after the dragged card is inserted at insertIndex
+  const finalI = remI < insertIndex ? remI : remI + 1
+  return (finalI - i) * (cardHeight + gap)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -62,27 +93,41 @@ function getItemIdAtPoint(
 
 export function useDragToReorder({
   items,
+  itemMeta,
   onReorder,
   containerRef,
 }: UseDragToReorderOptions): {
-  dragState: DragState
+  reorderDragState: ReorderDragState
+  cloneRef: React.RefCallback<HTMLElement>
   getDragHandleProps: (id: string) => DragHandleProps
   getItemProps: (id: string) => ItemProps
 } {
-  const [dragState, setDragState] = React.useState<DragState>({
-    draggingId: null,
-    overId: null,
-  })
+  const dragCtx = useBuilderDrag()
 
-  // Keep current items in a ref so event handlers don't capture stale closure
+  const [reorderDragState, setReorderDragState] =
+    React.useState<ReorderDragState>({
+      draggingId: null,
+      insertIndex: null,
+      cardRect: null,
+    })
+
   const itemsRef = React.useRef<string[]>(items)
   React.useEffect(() => {
     itemsRef.current = items
   })
 
   const draggingIdRef = React.useRef<string | null>(null)
-  const overIdRef = React.useRef<string | null>(null)
+  const fromIndexRef = React.useRef<number>(0)
+  const insertIndexRef = React.useRef<number | null>(null)
+  const cardHeightRef = React.useRef<number>(0)
+  const offsetYRef = React.useRef<number>(0)
+  const cloneElRef = React.useRef<HTMLElement | null>(null)
   const rafRef = React.useRef<number | null>(null)
+
+  // Stable ref callback so BuilderCanvas can attach the clone div
+  const cloneRef = React.useCallback((el: HTMLElement | null) => {
+    cloneElRef.current = el
+  }, [])
 
   const cleanup = React.useCallback(() => {
     if (rafRef.current !== null) {
@@ -97,28 +142,49 @@ export function useDragToReorder({
       const target = e.currentTarget as HTMLElement
       target.setPointerCapture(e.pointerId)
 
-      draggingIdRef.current = id
-      overIdRef.current = id
+      // Find the card element (the ancestor with data-drag-id)
+      const container = containerRef.current
+      if (!container) return
+      const cardEl = container.querySelector<HTMLElement>(`[data-drag-id="${id}"]`)
+      if (!cardEl) return
 
-      setDragState({ draggingId: id, overId: id })
+      const cardRect = cardEl.getBoundingClientRect()
+      const fromIndex = itemsRef.current.indexOf(id)
+
+      draggingIdRef.current = id
+      fromIndexRef.current = fromIndex
+      insertIndexRef.current = null
+      cardHeightRef.current = cardRect.height
+      offsetYRef.current = e.clientY - cardRect.top
+
+      setReorderDragState({ draggingId: id, insertIndex: null, cardRect })
+      dragCtx.startReorder(
+        id,
+        itemMeta[id]?.type ?? 'single-line',
+        itemMeta[id]?.label ?? 'Field',
+        e.clientX,
+        e.clientY
+      )
 
       function handlePointerMove(moveEvent: PointerEvent) {
         if (!draggingIdRef.current) return
 
-        const x = moveEvent.clientX
-        const y = moveEvent.clientY
+        // Move the clone imperatively — no React state update needed
+        const clone = cloneElRef.current
+        if (clone) {
+          clone.style.top = `${moveEvent.clientY - offsetYRef.current}px`
+        }
 
         if (rafRef.current !== null) return
-
         rafRef.current = requestAnimationFrame(() => {
           rafRef.current = null
-          const container = containerRef.current
-          if (!container) return
+          const cont = containerRef.current
+          if (!cont) return
 
-          const hoveredId = getItemIdAtPoint(container, x, y)
-          if (hoveredId && hoveredId !== overIdRef.current) {
-            overIdRef.current = hoveredId
-            setDragState((prev) => ({ ...prev, overId: hoveredId }))
+          const idx = getInsertIndexAtPoint(cont, moveEvent.clientY, draggingIdRef.current)
+          if (idx !== insertIndexRef.current) {
+            insertIndexRef.current = idx
+            setReorderDragState((prev) => ({ ...prev, insertIndex: idx }))
           }
         })
       }
@@ -127,20 +193,20 @@ export function useDragToReorder({
         cleanup()
 
         const draggingId = draggingIdRef.current
-        const overId = overIdRef.current
+        const insertIdx = insertIndexRef.current
         const currentItems = itemsRef.current
 
-        if (draggingId && overId && draggingId !== overId) {
+        if (draggingId !== null && insertIdx !== null) {
           const fromIdx = currentItems.indexOf(draggingId)
-          const toIdx = currentItems.indexOf(overId)
-          if (fromIdx !== -1 && toIdx !== -1) {
-            onReorder(reorder(currentItems, fromIdx, toIdx))
+          if (fromIdx !== -1 && insertIdx !== fromIdx) {
+            onReorder(reorder(currentItems, fromIdx, insertIdx))
           }
         }
 
         draggingIdRef.current = null
-        overIdRef.current = null
-        setDragState({ draggingId: null, overId: null })
+        insertIndexRef.current = null
+        setReorderDragState({ draggingId: null, insertIndex: null, cardRect: null })
+        dragCtx.endDrag()
 
         window.removeEventListener('pointermove', handlePointerMove)
         window.removeEventListener('pointerup', handlePointerUp)
@@ -149,10 +215,10 @@ export function useDragToReorder({
       window.addEventListener('pointermove', handlePointerMove)
       window.addEventListener('pointerup', handlePointerUp)
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [containerRef, onReorder, cleanup]
   )
 
-  // Keyboard support for accessibility
   const handleKeyDown = React.useCallback(
     (id: string, e: React.KeyboardEvent) => {
       const currentItems = itemsRef.current
@@ -182,22 +248,46 @@ export function useDragToReorder({
 
   const getItemProps = React.useCallback(
     (id: string): ItemProps => {
-      const isDragging = dragState.draggingId === id
-      const isOver = dragState.overId === id && dragState.draggingId !== id
+      const { draggingId, insertIndex } = reorderDragState
+      const isDragging = draggingId === id
+
+      if (isDragging) {
+        return {
+          'data-drag-id': id,
+          // invisible placeholder preserves layout space
+          style: { visibility: 'hidden' } as React.CSSProperties,
+          onKeyDown: (e: React.KeyboardEvent) => handleKeyDown(id, e),
+        }
+      }
+
+      if (draggingId !== null && insertIndex !== null) {
+        const i = itemsRef.current.indexOf(id)
+        const translateY = getDisplacement(
+          i,
+          fromIndexRef.current,
+          insertIndex,
+          cardHeightRef.current,
+          8 // gap-2 = 8px
+        )
+        return {
+          'data-drag-id': id,
+          style: {
+            transform: `translateY(${translateY}px)`,
+            transition: 'transform 150ms ease',
+            willChange: 'transform',
+          } as React.CSSProperties,
+          onKeyDown: (e: React.KeyboardEvent) => handleKeyDown(id, e),
+        }
+      }
 
       return {
         'data-drag-id': id,
-        style: {
-          opacity: isDragging ? 0.5 : 1,
-          outline: isOver ? '2px solid var(--color-primary)' : undefined,
-          outlineOffset: isOver ? '2px' : undefined,
-          transition: 'opacity 0.15s ease, outline 0.1s ease',
-        } as React.CSSProperties,
+        style: { transition: 'transform 150ms ease' } as React.CSSProperties,
         onKeyDown: (e: React.KeyboardEvent) => handleKeyDown(id, e),
-      } as ItemProps
+      }
     },
-    [dragState, handleKeyDown]
+    [reorderDragState, handleKeyDown]
   )
 
-  return { dragState, getDragHandleProps, getItemProps }
+  return { reorderDragState, cloneRef, getDragHandleProps, getItemProps }
 }

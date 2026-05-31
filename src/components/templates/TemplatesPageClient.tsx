@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { selectAllTemplates } from "@/store/selectors/templateSelectors";
-import { persistedTemplateIds } from "@/lib/storage/localStorage.adapter";
+import { persistedTemplateIds } from "@/lib/storage";
 import { TemplateCard } from "@/components/TemplateCard";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";

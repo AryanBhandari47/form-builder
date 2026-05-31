@@ -6,7 +6,7 @@
  */
 
 import type { FormTemplate } from '@/entities/template'
-import { localStorageAdapter } from './localStorage.adapter'
+import { localStorageAdapter as storageAdapter } from './localStorage.adapter'
 
 function iso(offsetDays = 0): string {
   const d = new Date()
@@ -608,11 +608,11 @@ const SEED_TEMPLATES: FormTemplate[] = [
  * don't have it yet (checked by ID).
  */
 export async function seedDefaultTemplates(): Promise<FormTemplate[]> {
-  const existing = await localStorageAdapter.getTemplates()
+  const existing = await storageAdapter.getTemplates()
 
   if (existing.length === 0) {
     for (const template of SEED_TEMPLATES) {
-      await localStorageAdapter.saveTemplate(template)
+      await storageAdapter.saveTemplate(template)
     }
     return SEED_TEMPLATES
   }
@@ -620,7 +620,7 @@ export async function seedDefaultTemplates(): Promise<FormTemplate[]> {
   // Existing install — add kitchen-sink if missing
   const hasKitchenSink = existing.some((t) => t.id === KITCHEN_SINK.id)
   if (!hasKitchenSink) {
-    await localStorageAdapter.saveTemplate(KITCHEN_SINK)
+    await storageAdapter.saveTemplate(KITCHEN_SINK)
   }
 
   return []

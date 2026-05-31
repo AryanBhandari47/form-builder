@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useDispatch } from 'react-redux'
-import type { AppDispatch } from '@/store'
-import { upsertTemplate } from '@/store/slices/templatesSlice'
-import { upsertManyResponses } from '@/store/slices/responsesSlice'
-import { setStorageReady } from '@/store/slices/appSlice'
-import { localStorageAdapter } from '@/lib/storage/localStorage.adapter'
+import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "@/store";
+import { upsertMany } from "@/store/slices/templatesSlice";
+import { upsertManyResponses } from "@/store/slices/responsesSlice";
+import { setStorageReady } from "@/store/slices/appSlice";
+import { storageAdapter } from "@/lib/storage";
 // import { seedDefaultTemplates } from '@/lib/storage/seedData'
 
 /**
@@ -19,11 +19,11 @@ import { localStorageAdapter } from '@/lib/storage/localStorage.adapter'
  * Returns { isLoading: boolean } for components that need it locally.
  */
 export function useStorageHydration(): { isLoading: boolean } {
-  const dispatch = useDispatch<AppDispatch>()
-  const [isLoading, setIsLoading] = useState(true)
+  const dispatch = useDispatch<AppDispatch>();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
     async function hydrate() {
       try {
@@ -31,41 +31,42 @@ export function useStorageHydration(): { isLoading: boolean } {
         // const seeded = await seedDefaultTemplates()
 
         // Load all templates from localStorage
-        const templates = await localStorageAdapter.getTemplates()
-        if (cancelled) return
+        const templates = await storageAdapter.getTemplates();
+        if (cancelled) return;
 
-        for (const template of templates) {
-          dispatch(upsertTemplate(template))
-        }
+        dispatch(upsertMany(templates));
 
         // Load all responses for each template
         const responseLoaders = templates.map((t) =>
-          localStorageAdapter.getResponses(t.id)
-        )
-        const responseArrays = await Promise.all(responseLoaders)
+          storageAdapter.getResponses(t.id)
+        );
+        const responseArrays = await Promise.all(responseLoaders);
 
-        if (cancelled) return
+        if (cancelled) return;
 
-        const allResponses = responseArrays.flat()
+        const allResponses = responseArrays.flat();
         if (allResponses.length > 0) {
-          dispatch(upsertManyResponses(allResponses))
+          dispatch(upsertManyResponses(allResponses));
         }
       } catch (error) {
-        console.error('[useStorageHydration] Failed to hydrate from storage:', error)
+        console.error(
+          "[useStorageHydration] Failed to hydrate from storage:",
+          error
+        );
       } finally {
         if (!cancelled) {
-          dispatch(setStorageReady())
-          setIsLoading(false)
+          dispatch(setStorageReady());
+          setIsLoading(false);
         }
       }
     }
 
-    void hydrate()
+    void hydrate();
 
     return () => {
-      cancelled = true
-    }
-  }, [dispatch])
+      cancelled = true;
+    };
+  }, [dispatch]);
 
-  return { isLoading }
+  return { isLoading };
 }

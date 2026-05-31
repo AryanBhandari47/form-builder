@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "@/store";
 import type { FormField, FieldType } from "@/entities/field";
@@ -13,6 +13,7 @@ import {
 import { addField } from "@/store/slices/templatesSlice";
 import { selectTemplateFields } from "@/store/selectors/templateSelectors";
 import { generateId, cn } from "@/lib/utils";
+import { useBuilderDrag } from "@/contexts/BuilderDragContext";
 import { FieldIcon } from "./FieldIcon";
 import { GripIcon, IconSearch } from "@/shared/ui";
 
@@ -64,10 +65,6 @@ const TYPE_DESCRIPTIONS: Record<FieldType, string> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Drag handle icon
-// ─────────────────────────────────────────────────────────────────────────────
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Props
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -81,6 +78,7 @@ interface FieldPaletteProps {
 
 export function FieldPalette({ templateId }: FieldPaletteProps) {
   const dispatch = useDispatch<AppDispatch>();
+  const dragCtx = useBuilderDrag();
 
   const searchQuery = useSelector(
     (state: RootState) => state.builderUi.searchQuery
@@ -90,10 +88,8 @@ export function FieldPalette({ templateId }: FieldPaletteProps) {
     (state: RootState) => selectTemplateFields(templateId)(state) ?? []
   );
 
-  // All registered field entries
   const allEntries = useMemo(() => getAllFieldEntries(), []);
 
-  // Filter by search query
   const filteredEntries = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return allEntries;
@@ -104,7 +100,6 @@ export function FieldPalette({ templateId }: FieldPaletteProps) {
     );
   }, [allEntries, searchQuery]);
 
-  // Group by category
   const grouped = useMemo(() => {
     const map = new Map<FieldCategory, typeof filteredEntries>();
     for (const entry of filteredEntries) {
@@ -116,7 +111,6 @@ export function FieldPalette({ templateId }: FieldPaletteProps) {
   }, [filteredEntries]);
 
   function handleAddField(type: FieldType) {
-    // Dynamically import entry to get defaultConfig
     const entry = allEntries.find((e) => e.type === type);
     if (!entry) return;
 
@@ -133,6 +127,53 @@ export function FieldPalette({ templateId }: FieldPaletteProps) {
     dispatch(addField({ templateId, field: newField }));
     dispatch(setSelectedField(newField.id));
     dispatch(setDirty(true));
+  }
+
+  // Per-item drag start tracking to distinguish click vs drag
+  const dragStartRef = useRef<{ x: number; y: number; type: FieldType; label: string } | null>(null);
+  const dragActivatedRef = useRef(false);
+
+  function handleItemPointerDown(
+    e: React.PointerEvent,
+    type: FieldType,
+    label: string
+  ) {
+    // Only main button
+    if (e.button !== 0) return;
+
+    dragStartRef.current = { x: e.clientX, y: e.clientY, type, label };
+    dragActivatedRef.current = false;
+
+    function handleMove(moveEvent: PointerEvent) {
+      if (!dragStartRef.current || dragActivatedRef.current) return;
+      const dx = moveEvent.clientX - dragStartRef.current.x;
+      const dy = moveEvent.clientY - dragStartRef.current.y;
+      if (Math.sqrt(dx * dx + dy * dy) > 5) {
+        dragActivatedRef.current = true;
+        dragCtx.startAdd(
+          dragStartRef.current.type,
+          dragStartRef.current.label,
+          moveEvent.clientX,
+          moveEvent.clientY
+        );
+        window.removeEventListener("pointermove", handleMove);
+        window.removeEventListener("pointerup", handleUp);
+      }
+    }
+
+    function handleUp() {
+      if (!dragActivatedRef.current && dragStartRef.current) {
+        // Short press with no drag → treat as click
+        handleAddField(dragStartRef.current.type);
+      }
+      dragStartRef.current = null;
+      dragActivatedRef.current = false;
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    }
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
   }
 
   return (
@@ -191,19 +232,21 @@ export function FieldPalette({ templateId }: FieldPaletteProps) {
                 <button
                   key={entry.type}
                   type="button"
-                  onClick={() => handleAddField(entry.type)}
+                  onPointerDown={(e) =>
+                    handleItemPointerDown(e, entry.type, entry.label)
+                  }
                   className={cn(
                     "group w-full flex items-center gap-3 px-3 py-2.5 mx-1",
                     "rounded-sm",
-                    "hover:bg-primary-light hover:text-primary",
+                    "hover:bg-primary-light",
                     "transition-colors duration-(--transition-fast)",
-                    "text-left cursor-pointer",
+                    "text-left cursor-grab active:cursor-grabbing",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   )}
                   title={`Add ${entry.label} field`}
                   style={{ width: "calc(100% - 8px)" }}
                 >
-                  {/* Drag handle placeholder */}
+                  {/* Drag handle */}
                   <span
                     className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-hidden="true"
@@ -212,16 +255,16 @@ export function FieldPalette({ templateId }: FieldPaletteProps) {
                   </span>
 
                   {/* Icon */}
-                  <span className="shrink-0 text-text-secondary group-hover:text-primary transition-colors">
+                  <span className="shrink-0 text-text-secondary transition-colors">
                     <FieldIcon type={entry.type} className="w-4 h-4" />
                   </span>
 
                   {/* Text */}
                   <span className="flex-1 min-w-0">
-                    <span className="block text-xs font-medium text-text-primary group-hover:text-primary transition-colors leading-tight">
+                    <span className="block text-xs font-medium text-text-primary leading-tight">
                       {entry.label}
                     </span>
-                    <span className="block text-[10px] text-text-muted group-hover:text-primary/70 transition-colors leading-tight mt-0.5 truncate">
+                    <span className="block text-[10px] text-text-muted leading-tight mt-0.5 truncate">
                       {TYPE_DESCRIPTIONS[entry.type]}
                     </span>
                   </span>

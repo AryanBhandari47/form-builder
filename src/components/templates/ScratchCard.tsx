@@ -16,11 +16,11 @@ export function ScratchCard({ onClick }: { onClick: () => void }) {
         min-h-[160px] sm:min-h-[180px]
       "
     >
-      <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-sidebar group-hover:bg-primary-light text-text-muted group-hover:text-primary transition-colors">
+      <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-sidebar text-text-secondary transition-colors">
         <IconPlus />
       </div>
       <div>
-        <p className="text-sm font-semibold text-text-primary group-hover:text-primary">
+        <p className="text-sm font-semibold text-text-primary">
           Start from scratch
         </p>
         <p className="text-xs text-text-muted mt-0.5">Build a blank form</p>
