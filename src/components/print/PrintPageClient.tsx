@@ -15,7 +15,6 @@ export default function PrintPageClient({
 }: {
   responseId: string;
 }) {
-
   const storageReady = useSelector((state: RootState) => state.app.storageReady)
   const response = useSelector((state: RootState) =>
     selectResponseById(responseId)(state)
@@ -30,63 +29,72 @@ export default function PrintPageClient({
   }, [storageReady, response])
 
   return (
-    <div className="print-container">
+    <div>
       <style>{`
         @media print {
-          body { background: #fff !important; font-size: 12pt; }
+          body { background: #fff !important; }
           .no-print { display: none !important; }
-          @page { margin: 2cm; }
+          @page { margin: 2cm; size: A4; }
         }
       `}</style>
 
-      <div className="no-print flex items-center justify-between px-4 sm:px-6 py-3 bg-white border-b border-gray-200 sticky top-0 z-10">
-        <p className="text-sm text-gray-600 truncate mr-4 min-w-0">
+      {/* Screen-only toolbar */}
+      <div className="no-print sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+        <p className="text-sm text-gray-500 truncate mr-4 min-w-0">
           {response
-            ? `${response.templateTitle} — Submitted ${formatDate(response.submittedAt)}`
+            ? `${response.templateTitle} — ${formatDate(response.submittedAt)}`
             : `Response #${responseId.slice(0, 8)}`}
         </p>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/templates"
-            className="text-sm text-gray-500 hover:text-gray-800 transition-colors"
-          >
+        <div className="flex items-center gap-4">
+          <Link href="/templates" className="text-sm text-gray-400 hover:text-gray-700 transition-colors">
             Close
           </Link>
           <button
             type="button"
             onClick={() => window.print()}
-            className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+            className="text-sm font-medium px-4 py-1.5 rounded-md bg-[#5B7FEF] text-white hover:bg-[#4A6EDE] transition-colors"
           >
-            Print / Save as PDF
+            Save as PDF
           </button>
         </div>
       </div>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
+      {/* Document content — no extra wrappers, page margins handle spacing */}
+      <main className="max-w-2xl mx-auto px-8 py-10">
         {!storageReady ? (
-          <div className="flex items-center justify-center py-24">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <div className="flex items-center justify-center py-32">
+            <div className="w-6 h-6 rounded-full border-2 border-[#5B7FEF] border-t-transparent animate-spin" />
           </div>
         ) : !response ? (
-          <div className="text-center py-24 text-gray-400">
+          <div className="text-center py-32 text-gray-400">
             <p className="text-sm font-medium">Response not found</p>
-            <p className="text-xs mt-1">ID: {responseId}</p>
+            <p className="text-xs mt-1 text-gray-300">ID: {responseId}</p>
           </div>
         ) : (
           <>
-            <div className="mb-8 pb-6 border-b-2 border-gray-300">
-              <h1 className="text-2xl font-bold text-gray-900">
+            {/* Accent bar */}
+            <div className="h-1 w-12 rounded-full bg-[#5B7FEF] mb-6" />
+
+            {/* Header */}
+            <div className="mb-8 pb-6 border-b border-gray-200">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#5B7FEF] mb-2">
+                Form Response
+              </p>
+              <h1 className="text-2xl font-bold text-gray-900 leading-tight">
                 {response.templateTitle}
               </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Submitted: {formatDate(response.submittedAt)}
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                Response ID: {response.id}
-              </p>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3">
+                <span className="text-xs text-gray-400">
+                  Submitted {formatDate(response.submittedAt)}
+                </span>
+                <span className="text-xs text-gray-300">
+                  ID: {response.id.slice(0, 12)}…
+                </span>
+              </div>
             </div>
 
-            <dl className="flex flex-col">
+            {/* Fields */}
+            <dl>
               {response.templateSnapshot.fieldIds
                 .filter((fieldId) => response.visibilityMap[fieldId] !== false)
                 .map((fieldId) => {
@@ -99,8 +107,14 @@ export default function PrintPageClient({
                 })}
             </dl>
 
-            <div className="mt-10 pt-4 border-t border-gray-200 text-xs text-gray-400 text-center no-print">
-              Generated by FormCraft
+            {/* Footer */}
+            <div className="mt-12 pt-4 border-t border-gray-100 flex items-center justify-between">
+              <span className="text-[10px] font-semibold tracking-widest text-gray-300">
+                FORMCRAFT
+              </span>
+              <span className="text-[10px] text-gray-300">
+                {formatDate(response.submittedAt)}
+              </span>
             </div>
           </>
         )}

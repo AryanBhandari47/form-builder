@@ -22,9 +22,9 @@ export function PrintFieldRow({ field, value }: PrintFieldRowProps) {
   if (field.type === "section-header") {
     const sizeClass = SECTION_SIZE_CLASS[field.size] ?? "text-base font-semibold";
     return (
-      <div className="mt-6 mb-2">
+      <div className="mt-8 mb-4 flex items-center gap-3">
+        <div className="w-1 self-stretch rounded-full bg-[#5B7FEF] shrink-0" />
         <h2 className={cn("text-gray-800", sizeClass)}>{field.label}</h2>
-        <hr className="border-gray-200 mt-1" />
       </div>
     );
   }
@@ -50,19 +50,25 @@ export function PrintFieldRow({ field, value }: PrintFieldRowProps) {
     }
   }
 
+  const isEmpty = displayValue === "—";
   const isCalculation = field.type === "calculation";
 
   return (
-    <div className="flex flex-col gap-1 py-2 border-b border-gray-100 last:border-0">
-      <dt className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+    <div className="py-3 border-b border-gray-100 last:border-0">
+      <dt className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
         {field.label}
         {isCalculation && (
-          <span className="ml-2 text-[10px] font-normal normal-case text-gray-400">
-            (calculated)
+          <span className="ml-2 font-normal normal-case tracking-normal text-gray-300">
+            calculated
           </span>
         )}
       </dt>
-      <dd className={cn("text-sm text-gray-800 break-words", displayValue === "—" && "text-gray-400 italic")}>
+      <dd
+        className={cn(
+          "text-sm leading-relaxed",
+          isEmpty ? "text-gray-300 italic" : "text-gray-800"
+        )}
+      >
         {displayValue}
       </dd>
     </div>
