@@ -6,6 +6,7 @@ import type {
   ConditionalOperator,
   ConditionEffect,
 } from "@/entities/field";
+import { getFieldEntry } from "@/lib/field-registry/registry";
 import { ConditionValueInput } from "./ConditionValueInput";
 
 const OPERATOR_LABELS: Record<ConditionalOperator, string> = {
@@ -29,21 +30,11 @@ const EFFECT_LABELS: Record<ConditionEffect, string> = {
   "mark-not-required": "Make optional",
 };
 
-export function getOperatorsForField(field: FormField): ConditionalOperator[] {
-  switch (field.type) {
-    case "single-line":
-    case "multi-line":
-      return ["equals", "not-equals", "contains"];
-    case "number":
-      return ["equals", "greater-than", "less-than", "within-range"];
-    case "date":
-      return ["equals", "is-before", "is-after"];
-    case "single-select":
-      return ["equals", "not-equals"];
-    case "multi-select":
-      return ["contains-any", "contains-all", "contains-none"];
-    default:
-      return [];
+function getOperatorsForField(field: FormField): ConditionalOperator[] {
+  try {
+    return getFieldEntry(field.type).getSupportedOperators();
+  } catch {
+    return [];
   }
 }
 

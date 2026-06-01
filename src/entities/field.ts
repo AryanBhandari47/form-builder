@@ -252,3 +252,8 @@ export type InputFieldType = Exclude<
 
 /** Input-capturing fields */
 export type InputFormField = FieldByType<InputFieldType>;
+
+/** Runtime check — true if the field type captures user input */
+export function isInputField(type: FieldType): boolean {
+  return type !== "section-header" && type !== "calculation";
+}

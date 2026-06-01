@@ -7,13 +7,15 @@ import type {
   FormField,
   FieldCondition,
 } from "@/entities/field";
+import { isInputField } from "@/entities/field";
 import { updateFieldConditions } from "@/store/slices/templatesSlice";
 import { setDirty } from "@/store/slices/builderUiSlice";
 import { selectTemplateFields } from "@/store/selectors/templateSelectors";
+import { getFieldEntry } from "@/lib/field-registry/registry";
 import { cn } from "@/lib/utils";
 import { Toggle } from "@/shared/ui";
 import { updateField } from "@/store/slices/templatesSlice";
-import { ConditionRow, getOperatorsForField } from "./ConditionRow";
+import { ConditionRow } from "./ConditionRow";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ConditionsBuilder
@@ -36,10 +38,7 @@ export function ConditionsBuilder({
 
   const currentField = allFields.find((f) => f.id === fieldId);
   const otherFields = allFields.filter(
-    (f) =>
-      f.id !== fieldId &&
-      f.type !== "section-header" &&
-      f.type !== "calculation"
+    (f) => f.id !== fieldId && isInputField(f.type)
   );
 
   const conditions: FieldCondition[] = currentField?.conditions ?? [];
@@ -54,7 +53,7 @@ export function ConditionsBuilder({
   function handleAddCondition() {
     const defaultTargetField = otherFields[0];
     const defaultOperators = defaultTargetField
-      ? getOperatorsForField(defaultTargetField)
+      ? getFieldEntry(defaultTargetField.type).getSupportedOperators()
       : [];
 
     const newCondition: FieldCondition = {
@@ -92,9 +91,7 @@ export function ConditionsBuilder({
 
   if (!currentField) return null;
 
-  const isDisplayOnly =
-    currentField.type === "section-header" ||
-    currentField.type === "calculation";
+  const isDisplayOnly = !isInputField(currentField.type);
 
   return (
     <div className="flex flex-col gap-6">

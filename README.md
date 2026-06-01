@@ -52,7 +52,7 @@ type FormField =
   | CalculationField; // type: 'calculation'
 ```
 
-TypeScript narrows the union through the discriminant, giving full type safety in field-type-specific code without casting. Utility types `FieldByType<T>`, `FieldConfig<T>`, and `InputFormField` are derived from the union.
+TypeScript narrows the union through the discriminant, giving full type safety in field-type-specific code without casting. Utility types `FieldByType<T>`, `FieldConfig<T>`, `InputFormField`, and `isInputField()` are derived from the union.
 
 ### 3. Normalized Redux State
 

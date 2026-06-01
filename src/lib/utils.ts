@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { nanoid } from 'nanoid'
+import { isInputField, type FieldType } from '@/entities/field'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Styling
@@ -145,7 +146,7 @@ export function getCompletionPercentage(response: { templateSnapshot: { fieldIds
   const { fieldIds, fields } = response.templateSnapshot
   const inputFields = fieldIds.filter((id) => {
     const f = fields[id]
-    return f && f.type !== 'section-header' && f.type !== 'calculation'
+    return f && isInputField(f.type as FieldType)
   })
   if (inputFields.length === 0) return 0
   const filled = inputFields.filter(

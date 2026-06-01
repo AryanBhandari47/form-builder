@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "@/store";
 import type { FormField } from "@/entities/field";
+import { isInputField } from "@/entities/field";
 import type { FieldValue, FormResponse } from "@/entities/response";
 import {
   selectTemplateById,
@@ -56,7 +57,7 @@ function getAnsweredCount(
     const f = fields[id];
     if (!f) continue;
     if (visibility[id] === false) continue;
-    if (f.type === "section-header" || f.type === "calculation") continue;
+    if (!isInputField(f.type)) continue;
     total++;
     const v = values[id];
     if (v !== null && v !== undefined && v !== "") {
@@ -260,8 +261,7 @@ export function FillForm({
         if (visibility[fieldId] === false) continue;
         const field = template.fields[fieldId];
         if (!field) continue;
-        if (field.type === "section-header" || field.type === "calculation")
-          continue;
+        if (!isInputField(field.type)) continue;
 
         let entry;
         try {

@@ -1,11 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import {
-  evaluateAll,
-  evaluateFieldRequired,
-  buildDependencyGraph,
-} from '@/lib/evaluator'
+import { evaluateAll, evaluateFieldRequired, buildDependencyGraph } from '@/lib/evaluator'
 import type { FormField, SingleLineField, NumberField } from '@/entities/field'
 import type { FieldValue } from '@/entities/response'
+import '@/lib/field-registry'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers

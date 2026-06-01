@@ -11,7 +11,9 @@ import type {
   ConditionalOperator,
   FieldType,
 } from "@/entities/field";
+import { isInputField } from "@/entities/field";
 import type { FieldValue } from "@/entities/response";
+import { getFieldEntry } from "@/lib/field-registry/registry";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Dependency graph
@@ -52,33 +54,18 @@ export function buildDependencyGraph(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Operator validity mapping
+// Operator validity — single source: the field registry
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Operators supported by each field type when used as a condition target */
-const SUPPORTED_OPERATORS: Record<
-  FieldType,
-  ReadonlyArray<ConditionalOperator>
-> = {
-  "single-line": ["equals", "not-equals", "contains"],
-  "multi-line": ["equals", "not-equals", "contains"],
-  number: ["equals", "greater-than", "less-than", "within-range"],
-  date: ["equals", "is-before", "is-after"],
-  "single-select": ["equals", "not-equals"],
-  "multi-select": ["contains-any", "contains-all", "contains-none"],
-  // Non-input types — conditions on these are not evaluated
-  "file-upload": [],
-  "section-header": [],
-  calculation: [],
-};
-
 function isValidOperatorForType(
-  fieldType: FieldType,
+  fieldType: FormField["type"],
   operator: ConditionalOperator
 ): boolean {
-  return (SUPPORTED_OPERATORS[fieldType] as ConditionalOperator[]).includes(
-    operator
-  );
+  try {
+    return getFieldEntry(fieldType).getSupportedOperators().includes(operator);
+  } catch {
+    return false;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -246,9 +233,7 @@ export function evaluateFieldRequired(
   fields: Record<string, FormField>,
   isVisible: boolean
 ): boolean {
-  // section-header and calculation never capture user input
-  if (field.type === "section-header" || field.type === "calculation")
-    return false;
+  if (!isInputField(field.type)) return false;
   // A hidden field is never required
   if (!isVisible) return false;
 
