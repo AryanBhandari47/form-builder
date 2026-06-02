@@ -46,6 +46,7 @@ const TYPE_TO_CATEGORY: Record<FieldType, FieldCategory> = {
   "file-upload": "Media",
   "section-header": "Layout",
   calculation: "Logic",
+  rating: "Basic Fields",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ const TYPE_DESCRIPTIONS: Record<FieldType, string> = {
   "file-upload": "Attach files or images",
   "section-header": "Visual divider / heading",
   calculation: "Auto-compute from numbers",
+  rating: "Star rating",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -130,7 +132,12 @@ export function FieldPalette({ templateId }: FieldPaletteProps) {
   }
 
   // Per-item drag start tracking to distinguish click vs drag
-  const dragStartRef = useRef<{ x: number; y: number; type: FieldType; label: string } | null>(null);
+  const dragStartRef = useRef<{
+    x: number;
+    y: number;
+    type: FieldType;
+    label: string;
+  } | null>(null);
   const dragActivatedRef = useRef(false);
 
   function handleItemPointerDown(

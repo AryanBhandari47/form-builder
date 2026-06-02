@@ -20,6 +20,7 @@ export const TYPE_LABEL: Record<FormField["type"], string> = {
   "file-upload": "File Upload",
   "section-header": "Section",
   calculation: "Calc",
+  rating: "Rating",
 };
 
 export interface BuilderFieldCardProps {

@@ -301,6 +301,39 @@ function CalculationPreview({
   );
 }
 
+function RatingPreview({
+  field,
+}: {
+  field: Extract<FormField, { type: "rating" }>;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center gap-1.5",
+        "border-2 border-dashed border-border rounded-md",
+        "bg-sidebar py-4 px-3",
+        "pointer-events-none"
+      )}
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+      >
+        <polygon
+          points="8,1.5 9.5,5.9 14.2,6 10.5,8.8 11.8,13.3 8,10.6 4.2,13.3 5.5,8.8 1.8,6 6.5,5.9"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.25"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main export
 // ─────────────────────────────────────────────────────────────────────────────
@@ -329,6 +362,8 @@ export function FieldPreview({ field }: FieldPreviewProps) {
       return <SectionHeaderPreview field={field} />;
     case "calculation":
       return <CalculationPreview field={field} />;
+    case "rating":
+      return <RatingPreview field={field} />;
     default:
       return null;
   }

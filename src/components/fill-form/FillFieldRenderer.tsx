@@ -80,6 +80,8 @@ export const FillFieldRenderer = memo(function FillFieldRenderer({
           allFields={fieldMap}
         />
       );
+    case "rating":
+      return 
     default: {
       const _exhaustive: never = field;
       void _exhaustive;

@@ -3,6 +3,7 @@
 import * as React from 'react'
 import type { FieldType } from '@/entities/field'
 import { cn } from '@/lib/utils'
+import { RatingIconOutline } from '@/shared/ui/Icons'
 
 export interface FieldIconProps {
   type: FieldType
@@ -204,6 +205,7 @@ const ICON_MAP: Record<FieldType, React.FC<{ className?: string }>> = {
   'file-upload': FileUploadIcon,
   'section-header': SectionHeaderIcon,
   'calculation': CalculationIcon,
+  rating: RatingIconOutline,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

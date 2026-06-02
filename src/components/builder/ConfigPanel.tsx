@@ -24,6 +24,7 @@ const TYPE_LABEL: Record<FormField["type"], string> = {
   "file-upload": "File Upload",
   "section-header": "Section Header",
   calculation: "Calculation",
+  rating: "Rating",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

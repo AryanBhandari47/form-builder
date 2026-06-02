@@ -17,7 +17,8 @@ export type FieldType =
   | "multi-select"
   | "file-upload"
   | "section-header"
-  | "calculation";
+  | "calculation"
+  | "rating";
 
 export type ConditionalOperator =
   // Text operators
@@ -212,6 +213,16 @@ export interface CalculationField extends FieldBase {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 10. Rating
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface RatingField extends FieldBase {
+  type: "rating";
+  label: string;
+  maxRating: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main discriminated union
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -224,7 +235,8 @@ export type FormField =
   | MultiSelectField
   | FileUploadField
   | SectionHeaderField
-  | CalculationField;
+  | CalculationField
+  | RatingField;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Utility type helpers
